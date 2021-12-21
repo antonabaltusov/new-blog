@@ -8,35 +8,57 @@ import {
   Patch,
 } from '@nestjs/common';
 import { EditNews, News, NewsService } from './news.service';
+import { CommentsService } from './comments/comments.service';
+import { renderNewsAll } from '../views/news/news-all';
+import { renderTemlate } from '../views/template';
 
 @Controller('news')
 export class NewsController {
-  constructor(private readonly newsService: NewsService) {}
+  constructor(
+    private readonly newsService: NewsService,
+    private readonly commentsServise: CommentsService,
+  ) {}
 
-  @Get('all')
+  @Get('/all')
+  getAllView() {
+    const news = this.newsService.getAll();
+    const content = renderNewsAll(news);
+    return renderTemlate(content, {
+      title: 'список новостей',
+      description: 'самые крутые новости',
+    });
+  }
+
+  @Get('/api/all')
   getAll(): News[] {
     return this.newsService.getAll();
   }
 
-  @Get('/:id')
+  @Get('/api/:id')
   get(@Param('id') id: string): News {
     const idInt = parseInt(id);
-    return this.newsService.find(idInt);
+    const news = this.newsService.find(idInt);
+    const comments = this.commentsServise.find(idInt);
+
+    return {
+      ...news,
+      comments,
+    };
   }
 
-  @Post()
+  @Post('/api')
   create(@Body() news: News): News {
     return this.newsService.create(news);
   }
 
-  @Delete('/:id')
+  @Delete('/api/:id')
   remove(@Param('id') id: string): string {
     const idInt = parseInt(id);
     const isRemove = this.newsService.remove(idInt);
     return isRemove ? 'Новость удалена' : 'Передан неверный идентификатор';
   }
 
-  @Patch()
+  @Patch('/api')
   change(@Body() news: EditNews): string {
     const isChange = this.newsService.change(news);
     return isChange ? 'Новость изменена' : 'Передан неверный идентификатор';

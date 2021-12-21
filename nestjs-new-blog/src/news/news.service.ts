@@ -8,6 +8,14 @@ export interface News {
   countView?: number;
 }
 
+export interface EditNews {
+  id: number;
+  title?: string;
+  description?: string;
+  author?: string;
+  countView?: number;
+}
+
 function getRandomInt(min: number, max: number): number {
   min = Math.ceil(min);
   max = Math.floor(max);
@@ -38,7 +46,7 @@ export class NewsService {
     return finalNews;
   }
 
-  change(newNews: News): boolean {
+  change(newNews: EditNews): boolean {
     const currentNews = this.news.find((news) => news.id === newNews.id);
     if (currentNews) {
       const finalNews = {

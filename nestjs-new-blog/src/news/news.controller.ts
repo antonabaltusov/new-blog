@@ -7,7 +7,7 @@ import {
   Delete,
   Patch,
 } from '@nestjs/common';
-import { News, NewsService } from './news.service';
+import { EditNews, News, NewsService } from './news.service';
 
 @Controller('news')
 export class NewsController {
@@ -37,7 +37,7 @@ export class NewsController {
   }
 
   @Patch()
-  change(@Body() news: News): string {
+  change(@Body() news: EditNews): string {
     const isChange = this.newsService.change(news);
     return isChange ? 'Новость изменена' : 'Передан неверный идентификатор';
   }

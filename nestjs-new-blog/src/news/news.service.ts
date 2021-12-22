@@ -51,16 +51,13 @@ export class NewsService {
     return finalNews;
   }
 
-  change(newNews: EditNews): boolean {
-    const currentNews = this.news.find((news) => news.id === newNews.id);
-    if (currentNews) {
-      const finalNews = {
-        ...currentNews,
+  edit(newNews: EditNews): boolean {
+    const indexEdit = this.news.findIndex((news) => news.id === newNews.id);
+    if (indexEdit !== -1) {
+      this.news[indexEdit] = {
+        ...this.news[indexEdit],
         ...newNews,
       };
-      this.remove(newNews.id);
-      this.news.push(finalNews);
-      console.log(this.news);
       return true;
     }
     return false;

@@ -59,8 +59,8 @@ export class NewsController {
   }
 
   @Patch('/api')
-  change(@Body() news: EditNews): string {
-    const isChange = this.newsService.change(news);
+  edit(@Body() news: EditNews): string {
+    const isChange = this.newsService.edit(news);
     return isChange ? 'Новость изменена' : 'Передан неверный идентификатор';
   }
 }

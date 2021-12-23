@@ -11,6 +11,8 @@ import { EditNews, News, NewsService } from './news.service';
 import { CommentsService } from './comments/comments.service';
 import { renderNewsAll } from '../views/news/news-all';
 import { renderTemlate } from '../views/template';
+import { renderNewsBlock } from 'src/views/news/news';
+import { renderComments } from 'src/views/news/comments';
 
 @Controller('news')
 export class NewsController {
@@ -26,6 +28,18 @@ export class NewsController {
     return renderTemlate(content, {
       title: 'список новостей',
       description: 'самые крутые новости',
+    });
+  }
+
+  @Get('/:id/detail')
+  getOneView(@Param('id') id: string) {
+    const idInt = parseInt(id);
+    const news = this.newsService.find(idInt);
+    const comments = this.commentsServise.find(idInt);
+    const content = renderNewsBlock(news) + renderComments(comments);
+    return renderTemlate(content, {
+      title: 'Новость года',
+      description: 'кратко и многом',
     });
   }
 

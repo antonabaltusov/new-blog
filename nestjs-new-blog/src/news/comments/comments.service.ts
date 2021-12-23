@@ -5,6 +5,8 @@ export type Comment = {
   id?: number;
   message: string;
   author: string;
+  reply?: Comment[];
+  blockcomment?: boolean;
 };
 
 export type EditComment = {
@@ -24,10 +26,26 @@ export class CommentsService {
     ],
   };
 
-  create(idNews: number, comment: Comment) {
+  create(idNews: number, comment: Comment, idComment?: number) {
     if (!this.comments[idNews]) {
       this.comments[idNews] = [];
     }
+
+    if (idComment) {
+      const indexComment = this.comments[idNews].findIndex(
+        (c) => c.id === idComment,
+      );
+      if (indexComment !== -1) {
+        if (!this.comments[idNews][indexComment].reply) {
+          this.comments[idNews][indexComment].reply = [];
+        }
+        comment.blockcomment = true;
+        this.comments[idNews][indexComment].reply.push(comment);
+        return 'ответ на комментарий был создан';
+      }
+      return 'комментарий на который хотели ответить не существует';
+    }
+
     this.comments[idNews].push({ ...comment, id: getRandomInt() });
     return 'комментарий был создан';
   }

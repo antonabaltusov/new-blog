@@ -5,9 +5,7 @@ export function renderComments(comments: Comment[]) {
   for (const comment of comments) {
     commentsListHtml += renderCommentBlock(comment);
   }
-  return `<h2>Комментарии</h2>
-  ${commentsListHtml}
-  `;
+  return commentsListHtml;
 }
 
 function renderCommentBlock(comment: Comment) {
@@ -16,8 +14,13 @@ function renderCommentBlock(comment: Comment) {
       <div class="card-body">
         <h5 class="card-title">${comment.author}</h5>
         <p class="card-text">${comment.message}</p>
-        <a href="#" class="btn btn-primary">на будущее</a>
+        ${comment.blockcomment ? '' : '<a href="#" class="btn btn-primary">комментировать</a>'}
       </div>
+      ${
+        comment.reply
+          ? `<p class="card-text">ответы:</p>${renderComments(comment.reply)}`
+          : ''
+      }
     </div>
   `;
 }

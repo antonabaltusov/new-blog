@@ -7,8 +7,8 @@ export interface News {
   description: string;
   author: string;
   countView?: number;
-  comments?: Comment[];
   cover?: string;
+  comments?: Comment[];
 }
 
 export interface EditNews {

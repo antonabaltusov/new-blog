@@ -36,7 +36,8 @@ export class NewsController {
     const idInt = parseInt(id);
     const news = this.newsService.find(idInt);
     const comments = this.commentsServise.find(idInt);
-    const content = renderNewsBlock(news) + renderComments(comments);
+    const isComments = comments ? true : false;
+    const content = renderNewsBlock(news, isComments) + renderComments(comments);
     return renderTemlate(content, {
       title: 'Новость года',
       description: 'кратко и многом',

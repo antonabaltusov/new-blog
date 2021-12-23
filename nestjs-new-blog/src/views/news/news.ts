@@ -1,6 +1,7 @@
 import { News } from '../../news/news.service';
 
-export function renderNewsBlock(news: News) {
+export function renderNewsBlock(news: News, comments: boolean) {
+  console.log(news);
   return `
   <div class="card" style="width: 100%;">
     ${
@@ -15,5 +16,6 @@ export function renderNewsBlock(news: News) {
     <p class="card-text">${news.description}</p>
   </div>
 </div>
+${comments ? '<h2> Комментарии</h2>' : '<h2> Нет комментариев</h2>'}
   `;
 }

@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { query } from 'express';
 import { Comment, CommentsService, EditComment } from './comments.service';
 
 @Controller('comments')
@@ -15,9 +16,14 @@ export class CommentsController {
   constructor(private readonly commentService: CommentsService) {}
 
   @Post('/api/:idNews')
-  create(@Param('idNews') idNews: string, @Body() comment: Comment) {
+  create(
+    @Param('idNews') idNews: string,
+    @Query('idComment') idComment,
+    @Body() comment: Comment,
+  ) {
     const idNewsInt = parseInt(idNews);
-    return this.commentService.create(idNewsInt, comment);
+    const idCommentInt = parseInt(idComment);
+    return this.commentService.create(idNewsInt, comment, idCommentInt);
   }
 
   @Get('/api/:idNews')

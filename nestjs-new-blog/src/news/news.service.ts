@@ -47,7 +47,6 @@ export class NewsService {
     };
 
     this.news.push(finalNews);
-    console.log(this.news);
     return finalNews;
   }
 
@@ -64,7 +63,6 @@ export class NewsService {
   }
 
   find(id: number): News | undefined {
-    console.log(this.news);
     return this.news.find((news) => news.id === id);
   }
 

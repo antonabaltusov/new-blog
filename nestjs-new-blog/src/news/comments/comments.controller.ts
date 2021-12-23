@@ -4,10 +4,11 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
-import { Comment, CommentsService } from './comments.service';
+import { Comment, CommentsService, EditComment } from './comments.service';
 
 @Controller('comments')
 export class CommentsController {
@@ -40,5 +41,17 @@ export class CommentsController {
   removeAll(@Query('idNews') idNews): boolean {
     const idNewsInt = parseInt(idNews);
     return this.commentService.removeAll(idNewsInt);
+  }
+
+  @Patch('/api/:idNews/:idComment')
+  edit(
+    @Param('idNews') idNews: string,
+    @Param('idComment') idComment: string,
+    @Body() news: EditComment,
+  ): string {
+    const idNewsInt = parseInt(idNews);
+    const idCommentInt = parseInt(idComment);
+    const isEdit = this.commentService.edit(idNewsInt, idCommentInt, news);
+    return isEdit ? 'Новость изменена' : 'Передан неверный идентификатор';
   }
 }

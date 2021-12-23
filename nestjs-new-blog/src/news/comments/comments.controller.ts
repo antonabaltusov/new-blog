@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { Comment, CommentsService } from './comments.service';
 
 @Controller('comments')
@@ -26,5 +34,10 @@ export class CommentsController {
     const idCommentInt = parseInt(idComment);
     console.log(idNewsInt, idCommentInt);
     return this.commentService.remove(idNewsInt, idCommentInt);
+  }
+
+  @Delete('/api/all')
+  removeAll(@Query('idNews') idNews): boolean {
+    return this.commentService.removeAll(idNews);
   }
 }

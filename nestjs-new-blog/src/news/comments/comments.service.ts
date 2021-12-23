@@ -9,6 +9,10 @@ export type Comment = {
   blockcomment?: boolean;
 };
 
+interface CommentsBase {
+  [key: string]: Comment[];
+}
+
 export type EditComment = {
   message?: string;
   author?: string;
@@ -16,7 +20,7 @@ export type EditComment = {
 
 @Injectable()
 export class CommentsService {
-  private readonly comments = {
+  private readonly comments: CommentsBase = {
     2: [
       {
         id: 2,
@@ -40,7 +44,7 @@ export class CommentsService {
           this.comments[idNews][indexComment].reply = [];
         }
         comment.blockcomment = true;
-        this.comments[idNews][indexComment].reply.push(comment);
+        this.comments[idNews][indexComment].reply?.push(comment);
         return 'ответ на комментарий был создан';
       }
       return 'комментарий на который хотели ответить не существует';
@@ -54,15 +58,15 @@ export class CommentsService {
     return this.comments[idNews] || undefined;
   }
 
-  remove(idNews: number, idComment: number): Comment[] | undefined {
+  remove(idNews: number, idComment: number): Comment[] | false {
     if (!this.comments[idNews]) {
-      return null;
+      return false;
     }
     const indexComment = this.comments[idNews].findIndex(
       (c) => c.id === idComment,
     );
     if (indexComment === -1) {
-      return null;
+      return false;
     }
     return this.comments[idNews].splice(indexComment, 1);
   }
@@ -77,7 +81,7 @@ export class CommentsService {
     }
 
     const indexComment = this.comments[idNews].findIndex(
-      (c) => c.id === idComment,
+      (c: Comment) => c.id === idComment,
     );
 
     if (indexComment !== -1) {
@@ -85,7 +89,6 @@ export class CommentsService {
         ...this.comments[idNews][indexComment],
         ...editComment,
       };
-      console.log(this.comments[idNews][indexComment]);
       return true;
     }
     return false;

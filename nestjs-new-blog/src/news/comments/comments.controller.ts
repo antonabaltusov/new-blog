@@ -18,7 +18,7 @@ export class CommentsController {
   @Post('/api/:idNews')
   create(
     @Param('idNews') idNews: string,
-    @Query('idComment') idComment,
+    @Query('idComment') idComment: string,
     @Body() comment: Comment,
   ) {
     const idNewsInt = parseInt(idNews);
@@ -44,7 +44,7 @@ export class CommentsController {
   }
 
   @Delete('/api/all')
-  removeAll(@Query('idNews') idNews): boolean {
+  removeAll(@Query('idNews') idNews: string): boolean {
     const idNewsInt = parseInt(idNews);
     return this.commentService.removeAll(idNewsInt);
   }

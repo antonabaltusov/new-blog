@@ -37,11 +37,13 @@ export class NewsController {
     const news = this.newsService.find(idInt);
     const comments = this.commentsServise.find(idInt);
     const isComments = comments ? true : false;
-    const content = renderNewsBlock(news, isComments) + renderComments(comments);
-    return renderTemlate(content, {
-      title: 'Новость года',
-      description: 'кратко и многом',
-    });
+    if (comments && news) {
+      const content = renderNewsBlock(news, isComments) + renderComments(comments);
+      return renderTemlate(content, {
+        title: 'Новость года',
+        description: 'кратко и многом',
+      });
+    }
   }
 
   @Get('/api/all')
@@ -50,15 +52,17 @@ export class NewsController {
   }
 
   @Get('/api/:id')
-  get(@Param('id') id: string): News {
+  get(@Param('id') id: string): News | string {
     const idInt = parseInt(id);
     const news = this.newsService.find(idInt);
     const comments = this.commentsServise.find(idInt);
-
-    return {
-      ...news,
-      comments,
-    };
+    if (comments && news) {
+      return {
+        ...news,
+        comments,
+      };
+    }
+    return 'новости не найдены';
   }
 
   @Post('/api')

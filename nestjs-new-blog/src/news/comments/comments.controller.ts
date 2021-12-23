@@ -38,6 +38,7 @@ export class CommentsController {
 
   @Delete('/api/all')
   removeAll(@Query('idNews') idNews): boolean {
-    return this.commentService.removeAll(idNews);
+    const idNewsInt = parseInt(idNews);
+    return this.commentService.removeAll(idNewsInt);
   }
 }

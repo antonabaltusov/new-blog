@@ -36,7 +36,7 @@ export class CommentsService {
     return this.comments[idNews].splice(indexComment, 1);
   }
 
-  removeAll(idNews: string): boolean {
+  removeAll(idNews: number): boolean {
     return delete this.comments?.[idNews];
   }
 }

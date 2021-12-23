@@ -54,7 +54,8 @@ export class NewsController {
   @Delete('/api/:id')
   remove(@Param('id') id: string): string {
     const idInt = parseInt(id);
-    const isRemove = this.newsService.remove(idInt);
+    const isRemove =
+      this.newsService.remove(idInt) && this.commentsServise.removeAll(idInt);
     return isRemove ? 'Новость удалена' : 'Передан неверный идентификатор';
   }
 

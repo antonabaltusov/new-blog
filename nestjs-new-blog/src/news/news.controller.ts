@@ -8,8 +8,10 @@ import {
   Patch,
   UseInterceptors,
   UploadedFile,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
-import { EditNews, News, NewsService } from './news.service';
+import { News, NewsService } from './news.service';
 import { CommentsService } from './comments/comments.service';
 import { renderNewsAll } from '../views/news/news-all';
 import { renderTemlate } from '../views/template';
@@ -20,6 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { HelperFileLoader } from 'src/utils/HelperFileLoader';
 import { EditNewsDto } from './dtos/edit-news-dto';
+import { extname } from 'path';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
@@ -48,7 +51,8 @@ export class NewsController {
     const comments = this.commentsServise.find(idInt);
     const isComments = comments ? true : false;
     if (comments && news) {
-      const content = renderNewsBlock(news, isComments) + renderComments(comments);
+      const content =
+        renderNewsBlock(news, isComments) + renderComments(comments);
       return renderTemlate(content, {
         title: news.title,
         description: news.description,
@@ -78,6 +82,19 @@ export class NewsController {
   @Post('/api')
   @UseInterceptors(
     FileInterceptor('cover', {
+      fileFilter: (req: any, file: any, cb: any) => {
+        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          cb(null, true);
+        } else {
+          cb(
+            new HttpException(
+              `Unsupported file type ${extname(file.originalname)}`,
+              HttpStatus.BAD_REQUEST,
+            ),
+            false,
+          );
+        }
+      },
       storage: diskStorage({
         destination: HelperFileLoader.destinationPath,
         filename: HelperFileLoader.customFileName,

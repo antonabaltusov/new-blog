@@ -3,27 +3,74 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { query } from 'express';
-import { Comment, CommentsService, EditComment } from './comments.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { HelperFileLoader } from 'src/utils/HelperFileLoader';
+import { NewsService } from '../news.service';
+import { CommentsService } from './comments.service';
+import { CreateCommentDto } from './dtos/create-comment-dto';
+import { EditCommentDto } from './dtos/edit-comment-dto';
+
+const PATH_NEWS = '/comments-static/';
+HelperFileLoader.path = PATH_NEWS;
 
 @Controller('comments')
 export class CommentsController {
-  constructor(private readonly commentService: CommentsService) {}
+  constructor(
+    private readonly commentService: CommentsService,
+    private readonly newsService: NewsService,
+  ) {}
 
   @Post('/api/:idNews')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      fileFilter: (req: any, file: any, cb: any) => {
+        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          cb(null, true);
+        } else {
+          cb(
+            new HttpException(
+              `Unsupported file type ${extname(file.originalname)}`,
+              HttpStatus.BAD_REQUEST,
+            ),
+            false,
+          );
+        }
+      },
+      storage: diskStorage({
+        destination: HelperFileLoader.destinationPath,
+        filename: HelperFileLoader.customFileName,
+      }),
+    }),
+  )
   create(
     @Param('idNews') idNews: string,
     @Query('idComment') idComment: string,
-    @Body() comment: Comment,
+    @Body() comment: CreateCommentDto,
+    @UploadedFile() avatar: Express.Multer.File,
   ) {
     const idNewsInt = parseInt(idNews);
-    const idCommentInt = parseInt(idComment);
-    return this.commentService.create(idNewsInt, comment, idCommentInt);
+    if (this.newsService.find(idNewsInt)) {
+      const idCommentInt = parseInt(idComment);
+
+      if (avatar?.filename) {
+        comment.avatar = PATH_NEWS + avatar.filename;
+      }
+  
+      comment.avatar = PATH_NEWS + avatar.filename;
+      return this.commentService.create(idNewsInt, comment, idCommentInt);
+    }
+    return 'новость отсутствует';
   }
 
   @Get('/api/:idNews')
@@ -39,7 +86,6 @@ export class CommentsController {
   ) {
     const idNewsInt = parseInt(idNews);
     const idCommentInt = parseInt(idComment);
-    console.log(idNewsInt, idCommentInt);
     return this.commentService.remove(idNewsInt, idCommentInt);
   }
 
@@ -53,7 +99,7 @@ export class CommentsController {
   edit(
     @Param('idNews') idNews: string,
     @Param('idComment') idComment: string,
-    @Body() news: EditComment,
+    @Body() news: EditCommentDto,
   ): string {
     const idNewsInt = parseInt(idNews);
     const idCommentInt = parseInt(idComment);

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsNotEmpty, ValidateIf } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateIf, IsEmpty } from 'class-validator';
 
 export class EditCommentDto {
   @IsString()
@@ -10,4 +10,16 @@ export class EditCommentDto {
   @IsNotEmpty()
   @ValidateIf((o) => o.author)
   author: string;
+
+  @ValidateIf((o) => o.avatar)
+  avatar: string;
+
+  @IsEmpty()
+  id: number;
+
+  @IsEmpty()
+  reply: Comment[];
+
+  @IsEmpty()
+  blockcomment: boolean;
 }

@@ -5,6 +5,7 @@ export type Comment = {
   id?: number;
   message: string;
   author: string;
+  avatar?: string;
   reply?: Comment[];
   blockcomment?: boolean;
 };
@@ -22,11 +23,12 @@ export type EditComment = {
 export class CommentsService {
   private readonly comments: CommentsBase = {
     2: [
-      {
-        id: 2,
-        message: 'wtf',
-        author: 'smn',
-      },
+      // {
+      //   id: 2,
+      //   message: 'wtf',
+      //   author: 'smn',
+      //   avatar: 
+      // },
     ],
   };
 

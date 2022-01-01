@@ -7,5 +7,6 @@ import { CommentsModule } from './comments/comments.module';
   controllers: [NewsController],
   providers: [NewsService],
   imports: [CommentsModule],
+  exports: [NewsService],
 })
 export class NewsModule {}

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Comment } from './comments/comments.service';
 
 export interface News {
-  id: number;
+  id?: number;
   title: string;
   description: string;
   author: string;
@@ -57,6 +57,8 @@ export class NewsService {
         ...this.news[indexEdit],
         ...newNews,
       };
+      console.log(this.news[indexEdit]);
+      
       return true;
     }
     return false;

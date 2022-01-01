@@ -6,6 +6,8 @@ import {
   Body,
   Delete,
   Patch,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { EditNews, News, NewsService } from './news.service';
 import { CommentsService } from './comments/comments.service';
@@ -13,6 +15,14 @@ import { renderNewsAll } from '../views/news/news-all';
 import { renderTemlate } from '../views/template';
 import { renderNewsBlock } from 'src/views/news/news';
 import { renderComments } from 'src/views/news/comments';
+import { CreateNewsDto } from './dtos/create-news-dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { HelperFileLoader } from 'src/utils/HelperFileLoader';
+import { EditNewsDto } from './dtos/edit-news-dto';
+
+const PATH_NEWS = '/news-static/';
+HelperFileLoader.path = PATH_NEWS;
 
 @Controller('news')
 export class NewsController {
@@ -40,8 +50,8 @@ export class NewsController {
     if (comments && news) {
       const content = renderNewsBlock(news, isComments) + renderComments(comments);
       return renderTemlate(content, {
-        title: 'Новость года',
-        description: 'кратко и многом',
+        title: news.title,
+        description: news.description,
       });
     }
   }
@@ -66,7 +76,23 @@ export class NewsController {
   }
 
   @Post('/api')
-  create(@Body() news: News): News {
+  @UseInterceptors(
+    FileInterceptor('cover', {
+      storage: diskStorage({
+        destination: HelperFileLoader.destinationPath,
+        filename: HelperFileLoader.customFileName,
+      }),
+    }),
+  )
+  create(
+    @Body() news: CreateNewsDto,
+    @UploadedFile() cover: Express.Multer.File,
+  ): News {
+    if (cover?.filename) {
+      news.cover = PATH_NEWS + cover.filename;
+    }
+
+    news.cover = PATH_NEWS + cover.filename;
     return this.newsService.create(news);
   }
 
@@ -79,7 +105,7 @@ export class NewsController {
   }
 
   @Patch('/api')
-  edit(@Body() news: EditNews): string {
+  edit(@Body() news: EditNewsDto): string {
     const isChange = this.newsService.edit(news);
     return isChange ? 'Новость изменена' : 'Передан неверный идентификатор';
   }

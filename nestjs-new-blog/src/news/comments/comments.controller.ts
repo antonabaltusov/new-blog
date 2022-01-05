@@ -6,9 +6,11 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
+  Render,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -21,7 +23,7 @@ import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dtos/create-comment-dto';
 import { EditCommentDto } from './dtos/edit-comment-dto';
 
-const PATH_NEWS = '/comments-static/';
+const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
 
 @Controller('comments')
@@ -30,6 +32,16 @@ export class CommentsController {
     private readonly commentService: CommentsService,
     private readonly newsService: NewsService,
   ) {}
+
+  @Get('create/:id')
+  @Render('create-comment')
+  createView(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('idComment') idComment: string,
+  ) {
+    const idCommentInt = parseInt(idComment);
+    return { id, idCommentInt, title: 'создание комментария' };
+  }
 
   @Post('/api/:idNews')
   @UseInterceptors(
@@ -62,21 +74,20 @@ export class CommentsController {
     const idNewsInt = parseInt(idNews);
     if (this.newsService.find(idNewsInt)) {
       const idCommentInt = parseInt(idComment);
-
       if (avatar?.filename) {
         comment.avatar = PATH_NEWS + avatar.filename;
       }
-  
-      comment.avatar = PATH_NEWS + avatar.filename;
       return this.commentService.create(idNewsInt, comment, idCommentInt);
     }
     return 'новость отсутствует';
   }
 
-  @Get('/api/:idNews')
+  @Get('/:idNews')
+  @Render('comment-list')
   get(@Param('idNews') idNews: string) {
     const idNewsInt = parseInt(idNews);
-    return this.commentService.find(idNewsInt);
+    const comments = this.commentService.find(idNewsInt);
+    return { comments, idNews, title: `комментарии` };
   }
 
   @Delete('/api/:idNews/:idComment')

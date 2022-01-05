@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Comment } from './comments/comments.service';
+import { EditNewsDto } from './dtos/edit-news-dto';
 
 export interface News {
   id?: number;
@@ -12,7 +13,6 @@ export interface News {
 }
 
 export interface EditNews {
-  id: number;
   title?: string;
   description?: string;
   author?: string;
@@ -30,12 +30,11 @@ export class NewsService {
   private readonly news: News[] = [
     {
       id: 2,
-      title: 'dfvefv',
-      description: 'evefvefv',
-      author: 'erver',
+      title: 'ура',
+      description: 'вот',
+      author: 'антон',
       countView: 7,
-      cover:
-        'https://cdnn21.img.ria.ru/images/148839/93/1488399309_0:0:3000:2086_600x0_80_0_1_7692b9d464b76425cdcbb70c37a76884.jpg.webp',
+      cover: '/news-static/0000.jpeg',
     },
   ];
 
@@ -50,15 +49,14 @@ export class NewsService {
     return finalNews;
   }
 
-  edit(newNews: EditNews): boolean {
-    const indexEdit = this.news.findIndex((news) => news.id === newNews.id);
+  edit(newNews: EditNewsDto, id: number): boolean {
+    const indexEdit = this.news.findIndex((news) => news.id === id);
     if (indexEdit !== -1) {
       this.news[indexEdit] = {
         ...this.news[indexEdit],
         ...newNews,
       };
       console.log(this.news[indexEdit]);
-      
       return true;
     }
     return false;

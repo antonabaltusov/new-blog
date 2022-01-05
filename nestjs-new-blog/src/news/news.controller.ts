@@ -10,13 +10,11 @@ import {
   UploadedFile,
   HttpException,
   HttpStatus,
+  Render,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { News, NewsService } from './news.service';
 import { CommentsService } from './comments/comments.service';
-import { renderNewsAll } from '../views/news/news-all';
-import { renderTemlate } from '../views/template';
-import { renderNewsBlock } from 'src/views/news/news';
-import { renderComments } from 'src/views/news/comments';
 import { CreateNewsDto } from './dtos/create-news-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -35,29 +33,33 @@ export class NewsController {
   ) {}
 
   @Get('/all')
+  @Render('news-list')
   getAllView() {
     const news = this.newsService.getAll();
-    const content = renderNewsAll(news);
-    return renderTemlate(content, {
-      title: 'список новостей',
-      description: 'самые крутые новости',
-    });
+    return { news, title: 'Список новостей' };
+  }
+
+  @Get('edit/news/:id')
+  @Render('edit-news')
+  editView(@Param('id') id: string) {
+    const idInt = parseInt(id);
+    const news = this.newsService.find(idInt);
+    return { news, title: 'Редактирование новости' };
+  }
+
+  @Get('create/news')
+  @Render('create-news')
+  createView() {
+    return { title: 'создание новости' };
   }
 
   @Get('/:id/detail')
-  getOneView(@Param('id') id: string) {
+  @Render('detail-news')
+  detailView(@Param('id') id: string) {
     const idInt = parseInt(id);
     const news = this.newsService.find(idInt);
     const comments = this.commentsServise.find(idInt);
-    const isComments = comments ? true : false;
-    if (comments && news) {
-      const content =
-        renderNewsBlock(news, isComments) + renderComments(comments);
-      return renderTemlate(content, {
-        title: news.title,
-        description: news.description,
-      });
-    }
+    return { news, comments, title: news ? news.title : 'новость отсутствует' };
   }
 
   @Get('/api/all')
@@ -76,7 +78,7 @@ export class NewsController {
         comments,
       };
     }
-    return 'новости не найдены';
+    return 'новость не найдена';
   }
 
   @Post('/api')
@@ -108,8 +110,7 @@ export class NewsController {
     if (cover?.filename) {
       news.cover = PATH_NEWS + cover.filename;
     }
-
-    news.cover = PATH_NEWS + cover.filename;
+    console.log(news);
     return this.newsService.create(news);
   }
 
@@ -121,9 +122,14 @@ export class NewsController {
     return isRemove ? 'Новость удалена' : 'Передан неверный идентификатор';
   }
 
-  @Patch('/api')
-  edit(@Body() news: EditNewsDto): string {
-    const isChange = this.newsService.edit(news);
+  @Patch('/api/:id')
+  @UseInterceptors(FileInterceptor('news'))
+  edit(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() news: EditNewsDto,
+  ): string {
+    console.log(news);
+    const isChange = this.newsService.edit(news, id);
     return isChange ? 'Новость изменена' : 'Передан неверный идентификатор';
   }
 }

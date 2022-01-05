@@ -1,0 +1,43 @@
+<h1>Создание новости</h1>
+<form method="post" action="/news/api" enctype="multipart/form-data">
+  <div class="mb-3">
+    <label for="titleInput" class="form-label">Заголовок</label>
+    <input class="form-control" name="title" id="titleInput">
+  </div>
+  <div class="mb-3">
+    <label for="descriptionInput" class="form-label">Описание</label>
+    <textarea class="form-control" name="description" id="descriptionInput" rows="3"></textarea>
+  </div>
+  <div class="mb-3">
+    <label for="authorInput" class="form-label">Автор</label>
+    <input class="form-control" name="author" id="authorInput">
+  </div>
+  <div class="form-group">
+    <label for="cover">Обложка новости</label>
+    <input type="file" class="form-control-file" id="cover" name="cover">
+  </div>
+  <button type="button" class="btn btn-primary" onclick='sendForm()'>Создать</button>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  function sendForm() {
+    var data = new FormData($('form')[0]);
+    console.log(data.get('author'));
+    $.ajax({
+      url: '/news/api',
+      data: data,
+      cache: false,
+      contentType: false,
+      processData: false,
+      method: 'POST',
+      success: function() {
+        alert('Новость создана')
+        window.location.href = '/news/all';
+      },
+      error: function(data) {
+        console.log(data.responseText)
+      }
+    });
+  }
+</script>

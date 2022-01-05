@@ -23,12 +23,11 @@ export type EditComment = {
 export class CommentsService {
   private readonly comments: CommentsBase = {
     2: [
-      // {
-      //   id: 2,
-      //   message: 'wtf',
-      //   author: 'smn',
-      //   avatar: 
-      // },
+      {
+        id: 2,
+        message: 'wtf',
+        author: 'smn',
+      },
     ],
   };
 

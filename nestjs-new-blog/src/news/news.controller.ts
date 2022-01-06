@@ -21,6 +21,7 @@ import { diskStorage } from 'multer';
 import { HelperFileLoader } from 'src/utils/HelperFileLoader';
 import { EditNewsDto } from './dtos/edit-news-dto';
 import { extname } from 'path';
+import { MailService } from 'src/mail/mail.service';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
@@ -30,6 +31,7 @@ export class NewsController {
   constructor(
     private readonly newsService: NewsService,
     private readonly commentsServise: CommentsService,
+    private readonly mailService: MailService,
   ) {}
 
   @Get('/all')
@@ -103,15 +105,20 @@ export class NewsController {
       }),
     }),
   )
-  create(
+  async create(
     @Body() news: CreateNewsDto,
     @UploadedFile() cover: Express.Multer.File,
-  ): News {
+  ): Promise<CreateNewsDto> {
     if (cover?.filename) {
       news.cover = PATH_NEWS + cover.filename;
     }
     console.log(news);
-    return this.newsService.create(news);
+    const createdNews = this.newsService.create(news);
+    await this.mailService.sendNewNewsForAdmins(
+      ['sims0204@yandex.ru', 'sims0204@gmail.com'],
+      createdNews,
+    );
+    return createdNews;
   }
 
   @Delete('/api/:id')

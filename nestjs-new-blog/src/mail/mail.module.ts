@@ -1,14 +1,14 @@
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { MailController } from './mail.controller';
-import { join } from 'path';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
     MailerModule.forRoot({
-      transport: 'smtps://sims0204@mail.ru:wifho6-gAdhop-tentic@smtp.mail.ru',
+      transport: 'smtps://sims0204@mail.ru:BHx8qJ1mHfFsaqMsrPh7@smtp.mail.ru',
       defaults: {
         from: '"NestJS робот" <sims0204@mail.ru>',
       },

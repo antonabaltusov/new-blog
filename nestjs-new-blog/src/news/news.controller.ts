@@ -131,12 +131,21 @@ export class NewsController {
 
   @Patch('/api/:id')
   @UseInterceptors(FileInterceptor('news'))
-  edit(
+  async edit(
     @Param('id', ParseIntPipe) id: number,
     @Body() news: EditNewsDto,
-  ): string {
+  ): Promise<string> {
     console.log(news);
-    const isChange = this.newsService.edit(news, id);
-    return isChange ? 'Новость изменена' : 'Передан неверный идентификатор';
+    const answer = this.newsService.edit(news, id);
+    if (answer.change) {
+      await this.mailService.editNewsForAdmins(
+        ['sims0204@yandex.ru', 'sims0204@gmail.com'],
+        answer.news,
+        answer.filterNewNews,
+      );
+      return 'Новость изменена';
+    } else {
+      return 'Передан неверный идентификатор';
+    }
   }
 }

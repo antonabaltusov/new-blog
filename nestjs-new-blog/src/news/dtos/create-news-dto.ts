@@ -1,4 +1,4 @@
-import { IsNumber, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
+import { IsNumber, IsNotEmpty, IsString, ValidateIf, IsEmpty } from 'class-validator';
 
 export class CreateNewsDto {
   @IsNotEmpty()
@@ -13,9 +13,7 @@ export class CreateNewsDto {
   @IsString()
   author: string;
 
-  @IsNumber()
-  @IsNotEmpty()
-  @ValidateIf((o) => o.countView || o.countView === '')
+  @IsEmpty()
   countView: number;
 
   @ValidateIf((o) => o !== undefined)

@@ -19,6 +19,10 @@ export interface EditNews {
   author?: string;
   countView?: number;
 }
+export interface answerChange {
+  change: boolean;
+  filterNewNews?: EditNewsDto;
+}
 
 export function getRandomInt(min = 1, max = 99999): number {
   min = Math.ceil(min);
@@ -50,17 +54,28 @@ export class NewsService {
     return finalNews;
   }
 
-  edit(newNews: EditNewsDto, id: number): boolean {
+  edit(newNews: EditNewsDto, id: number) {
     const indexEdit = this.news.findIndex((news) => news.id === id);
+    const filtredNewNews = this.filter(this.news[indexEdit], newNews);
+    const oldNews = this.news[indexEdit];
     if (indexEdit !== -1) {
       this.news[indexEdit] = {
         ...this.news[indexEdit],
-        ...newNews,
+        ...filtredNewNews,
       };
-      console.log(this.news[indexEdit]);
-      return true;
+      return { change: true, news: oldNews, filterNewNews: filtredNewNews };
     }
-    return false;
+    return { change: false };
+  }
+
+  filter(oldNews, newNews) {
+    const filtredNewNews = {};
+    for (const key in newNews) {
+      if (newNews[key] !== oldNews[key]) {
+        filtredNewNews[key] = newNews[key];
+      }
+    }
+    return filtredNewNews;
   }
 
   find(id: number): News | undefined {

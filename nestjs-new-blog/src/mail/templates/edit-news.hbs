@@ -1,0 +1,28 @@
+<table>
+  <tr>
+    <td>Название</td>
+    <td>{{#if changes.title}}было: <s>{{news.title}}</s> стало: {{changes.title}}
+    {{else}}{{news.title}}
+    {{/if}}</td>
+  </tr>
+  <tr>
+    <td>Описание</td>
+    <td>{{#if changes.description}}было: <s>{{news.description}}</s> стало: {{changes.description}}
+    {{else}}{{news.description}}
+    {{/if}}</td>
+  </tr>
+  <tr>
+    <td>Автор</td>
+    <td>{{#if changes.author}}было: <s>{{news.author}}</s> стало: {{changes.author}}
+    {{else}}{{news.author}}
+    {{/if}}</td>
+  </tr>
+  <tr>
+    <td>Ссылка на новость</td>
+    <td>
+      <a href='http://localhost:3000/news/{{news.id}}/detail'>
+        http://localhost:3000/news/{{news.id}}/detail
+      </a>
+    </td>
+  </tr>
+</table>

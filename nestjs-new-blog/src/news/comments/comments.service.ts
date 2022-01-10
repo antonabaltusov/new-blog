@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { getRandomInt } from '../news.service';
 
 export type Comment = {
   id?: number;
@@ -18,6 +17,12 @@ export type EditComment = {
   message?: string;
   author?: string;
 };
+
+export function getRandomInt(min = 1, max = 99999): number {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 @Injectable()
 export class CommentsService {

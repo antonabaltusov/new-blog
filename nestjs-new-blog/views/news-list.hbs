@@ -3,14 +3,13 @@
   <div class="row">
     {{#each news}}
     <div class="col-lg-6">
-      <div class="card">
+      <div class="card" onclick="window.location.href= '/news/{{this.id}}/detail'" style="cursor: pointer;">
         <img src='http://localhost:3000{{this.cover}}' class="card-img-top" style="height: 200px; object-fit: cover;" alt=''>
         <div class="card-body">
           <h5 class="card-title">{{this.title}}</h5>
           <h6 class="card-subtitle mb-2 text-muted">Автор: {{this.author}}</h6>
           <h6 class="card-subtitle mb-2 text-muted">Дата создания: {{this.createdAt}}</h6>
           <p class="card-text">{{this.description}}</p>
-          <a href="http://localhost:3000/news/{{this.id}}/detail" class="btn btn-primary" role="button" data-bs-toggle="button">открыть</a>
         </div>
       </div>
     </div>

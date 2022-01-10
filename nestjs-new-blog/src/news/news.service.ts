@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UsersService } from 'src/users/users.service';
+import { Repository } from 'typeorm';
 import { Comment } from './comments/comments.service';
 import { CreateNewsDto } from './dtos/create-news-dto';
 import { EditNewsDto } from './dtos/edit-news-dto';
-
+import { NewsEntity } from './news.entity';
 export interface News {
   id?: number;
   title: string;
   description: string;
-  author: string;
+  author?: string;
   countView?: number;
   cover?: string;
   comments?: Comment[];
@@ -24,46 +27,38 @@ export interface answerChange {
   filterNewNews?: EditNewsDto;
 }
 
-export function getRandomInt(min = 1, max = 99999): number {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 @Injectable()
 export class NewsService {
-  private readonly news: News[] = [
-    {
-      id: 2,
-      title: 'ура',
-      description: 'вот',
-      author: 'антон',
-      countView: 7,
-      cover: '/news-static/0000.jpeg',
-    },
-  ];
+  constructor(
+    @InjectRepository(NewsEntity)
+    private newsRepository: Repository<NewsEntity>,
+    private userServise: UsersService,
+  ) {}
 
-  create(news: CreateNewsDto): CreateNewsDto {
-    const id = getRandomInt(0, 99999);
-    const finalNews = {
-      ...news,
-      id: id,
-    };
-
-    this.news.push(finalNews);
-    return finalNews;
+  async create(news: CreateNewsDto): Promise<NewsEntity> {
+    const newsEntity = new NewsEntity();
+    newsEntity.title = news.title;
+    newsEntity.description = news.description;
+    newsEntity.cover = news.cover;
+    const _user = await this.userServise.findById(parseInt(news.userId));
+    newsEntity.user = _user;
+    return await this.newsRepository.save(newsEntity);
   }
 
-  edit(newNews: EditNewsDto, id: number) {
-    const indexEdit = this.news.findIndex((news) => news.id === id);
-    const filtredNewNews = this.filter(this.news[indexEdit], newNews);
-    const oldNews = this.news[indexEdit];
-    if (indexEdit !== -1) {
-      this.news[indexEdit] = {
-        ...this.news[indexEdit],
+  async edit(newNews: EditNewsDto, id: number) {
+    let editableNews = await this.find(id);
+    const filtredNewNews = this.filter(editableNews, newNews);
+    if (editableNews) {
+      editableNews = {
+        ...editableNews,
         ...filtredNewNews,
       };
-      return { change: true, news: oldNews, filterNewNews: filtredNewNews };
+      this.newsRepository.save(editableNews);
+      return {
+        change: true,
+        news: editableNews,
+        filterNewNews: filtredNewNews,
+      };
     }
     return { change: false };
   }
@@ -78,18 +73,18 @@ export class NewsService {
     return filtredNewNews;
   }
 
-  find(id: number): News | undefined {
-    return this.news.find((news) => news.id === id);
+  find(id: number): Promise<NewsEntity> {
+    return this.newsRepository.findOne({ id }, { relations: ['user'] });
   }
 
-  getAll(): News[] {
-    return this.news;
+  getAll(): Promise<NewsEntity[]> {
+    return this.newsRepository.find({});
   }
 
-  remove(id: number): boolean {
-    const indexRemove = this.news.findIndex((news) => news.id === id);
-    if (indexRemove !== -1) {
-      this.news.splice(indexRemove, 1);
+  async remove(id: number): Promise<boolean> {
+    const removeNews = await this.find(id);
+    if (removeNews) {
+      this.newsRepository.remove(removeNews);
       return true;
     }
     return false;

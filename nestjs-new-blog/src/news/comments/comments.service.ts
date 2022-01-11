@@ -1,9 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UsersService } from '../../users/users.service';
+import { Repository } from 'typeorm';
+import { NewsEntity } from '../news.entity';
+import { NewsService } from '../news.service';
+import { CommentsEntity } from './comments.entity';
+import { CreateCommentDto } from './dtos/create-comment-dto';
 
 export type Comment = {
   id?: number;
   message: string;
-  author: string;
+  authorId?: number;
   avatar?: string;
   reply?: Comment[];
   blockcomment?: boolean;
@@ -26,74 +33,61 @@ export function getRandomInt(min = 1, max = 99999): number {
 
 @Injectable()
 export class CommentsService {
-  private readonly comments: CommentsBase = {
-    2: [
-      {
-        id: 2,
-        message: 'wtf',
-        author: 'smn',
-      },
-    ],
-  };
+  constructor(
+    @InjectRepository(CommentsEntity)
+    private commentsRepository: Repository<CommentsEntity>,
+    private usersService: UsersService,
+  ) {}
 
-  create(idNews: number, comment: Comment, idComment?: number) {
-    if (!this.comments[idNews]) {
-      this.comments[idNews] = [];
-    }
-
-    if (idComment) {
-      const indexComment = this.comments[idNews].findIndex(
-        (c) => c.id === idComment,
-      );
-      if (indexComment !== -1) {
-        if (!this.comments[idNews][indexComment].reply) {
-          this.comments[idNews][indexComment].reply = [];
-        }
-        comment.blockcomment = true;
-        this.comments[idNews][indexComment].reply?.push(comment);
-        return 'ответ на комментарий был создан';
-      }
-      return 'комментарий на который хотели ответить не существует';
-    }
-
-    this.comments[idNews].push({ ...comment, id: getRandomInt() });
-    return 'комментарий был создан';
+  async create(
+    _news: NewsEntity,
+    comment: CreateCommentDto,
+    idComment?: string,
+  ) {
+    const _user = await this.usersService.findById(parseInt(comment.authorId));
+    const _newComment = new CommentsEntity();
+    _newComment.message = comment.message;
+    _newComment.user = _user;
+    _newComment.news = _news;
+    // if (idComment) {
+    //   const _comment = await this.findById(parseInt(idComment));
+    //   _newComment.comment = _comment;
+    //   console.log(_newComment.id);
+    //   await this.commentsRepository.save(_newComment);
+    //   console.log(await this.commentsRepository.findOne(_newComment));
+    //   _comment.answer = await this.commentsRepository.findOne(_newComment);
+    //   return true;
+    // }
+    return await this.commentsRepository.save(_newComment);
   }
 
-  find(idNews: number): Comment[] | undefined {
-    return this.comments[idNews] || undefined;
+  async findById(id: number): Promise<CommentsEntity> {
+    return this.commentsRepository.findOne(id);
   }
 
-  remove(idNews: number, idComment: number): Comment[] | false {
-    if (!this.comments[idNews]) {
-      return false;
-    }
-    const indexComment = this.comments[idNews].findIndex(
-      (c) => c.id === idComment,
-    );
-    if (indexComment === -1) {
-      return false;
-    }
-    return this.comments[idNews].splice(indexComment, 1);
+  async findByNewsId(idNews: number): Promise<CommentsEntity[]> {
+    return this.commentsRepository.find({ where: { news: { id: idNews } } });
   }
 
-  removeAll(idNews: number): boolean {
-    return delete this.comments?.[idNews];
+  async removeById(id: number): Promise<boolean> {
+    const _removeComment = await this.findById(id);
+    if (_removeComment) {
+      this.commentsRepository.remove(_removeComment);
+      return true;
+    }
+    return false;
   }
 
-  edit(idNews: number, idComment: number, editComment: EditComment): boolean {
-    if (!this.comments[idNews]) {
-      return false;
-    }
+  // removeAll(idNews: number): boolean {
+  //   return delete this.comments?.[idNews];
+  // }
 
-    const indexComment = this.comments[idNews].findIndex(
-      (c: Comment) => c.id === idComment,
-    );
-
-    if (indexComment !== -1) {
-      this.comments[idNews][indexComment] = {
-        ...this.comments[idNews][indexComment],
-        ...editComment,
+  async edit(id: number, message: string): Promise<boolean> {
+    let _editableComment = await this.findById(id);
+    if (_editableComment) {
+      _editableComment = {
+        ..._editableComment,
+        message,
       };
       return true;
     }

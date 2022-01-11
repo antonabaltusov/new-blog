@@ -8,17 +8,5 @@ export class CreateCommentDto {
 
   @IsNotEmpty()
   @IsString()
-  author: string;
-
-  @ValidateIf((o) => o.avatar)
-  avatar: string;
-
-  @IsEmpty()
-  id: number;
-
-  @IsEmpty()
-  reply: Comment[];
-
-  @IsEmpty()
-  blockcomment: boolean;
+  authorId: string;
 }

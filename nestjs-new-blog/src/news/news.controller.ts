@@ -45,7 +45,7 @@ export class NewsController {
   @Get('edit/news/:id')
   @Render('edit-news')
   editView(@Param('id', ParseIntPipe) id: number) {
-    const news = this.newsService.find(id);
+    const news = this.newsService.findById(id);
     return { news, title: 'Редактирование новости' };
   }
 
@@ -58,7 +58,7 @@ export class NewsController {
   @Get('/:id/detail')
   @Render('detail-news')
   async detailView(@Param('id', ParseIntPipe) id: number) {
-    const news = await this.newsService.find(id);
+    const news = await this.newsService.findById(id);
     if (!news) {
       throw new HttpException(
         {
@@ -68,7 +68,7 @@ export class NewsController {
         HttpStatus.NOT_FOUND,
       );
     }
-    const comments = this.commentsServise.find(id);
+    const comments = this.commentsServise.findById(id);
     return { news, comments, title: news ? news.title : 'новость отсутствует' };
   }
 
@@ -79,7 +79,7 @@ export class NewsController {
 
   @Get('/api/:id')
   async get(@Param('id', ParseIntPipe) id: number): Promise<NewsEntity> {
-    const news = await this.newsService.find(id);
+    const news = await this.newsService.findById(id);
     if (!news) {
       throw new HttpException(
         {

@@ -12,8 +12,9 @@ import {
   HttpStatus,
   Render,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
-import { News, NewsService } from './news.service';
+import { NewsService } from './news.service';
 import { CommentsService } from './comments/comments.service';
 import { CreateNewsDto } from './dtos/create-news-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -23,6 +24,7 @@ import { EditNewsDto } from './dtos/edit-news-dto';
 import { extname } from 'path';
 import { MailService } from 'src/mail/mail.service';
 import { NewsEntity } from './news.entity';
+import { UsersService } from 'src/users/users.service';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
@@ -33,11 +35,36 @@ export class NewsController {
     private readonly newsService: NewsService,
     private readonly commentsServise: CommentsService,
     private readonly mailService: MailService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get('/all')
   @Render('news-list')
-  async getAllView() {
+  async getAllView(@Query('idUser') idUser: string) {
+    if (idUser) {
+      const _user = await this.usersService.findById(parseInt(idUser));
+      if (!_user) {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'Не существует такого автора',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      const idUserInt = parseInt(idUser);
+      const news = await this.newsService.findByUserId(idUserInt);
+      if (news) {
+        return { news, title: `Список новостей автора ${_user.firstName}` };
+      }
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Новости были не найдены',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
     const news = await this.newsService.getAll();
     return { news, title: 'Список новостей' };
   }
@@ -129,7 +156,16 @@ export class NewsController {
     if (cover?.filename) {
       news.cover = PATH_NEWS + cover.filename;
     }
-    console.log(news);
+    const _user = await this.usersService.findById(parseInt(news.userId));
+    if (!_user) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Не существует такого автора',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
     const createdNews = await this.newsService.create(news);
     // await this.mailService.sendNewNewsForAdmins(
     //   ['sims0204@yandex.ru', 'sims0204@gmail.com'],
@@ -140,8 +176,6 @@ export class NewsController {
 
   @Delete('/api/:id')
   async remove(@Param('id', ParseIntPipe) id: number): Promise<string> {
-    // const isRemove =
-    //   this.newsService.remove(idInt) && this.commentsServise.removeAll(idInt);
     const isRemove = await this.newsService.remove(id);
     throw new HttpException(
       {

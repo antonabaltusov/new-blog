@@ -46,17 +46,17 @@ export class NewsService {
   }
 
   async edit(newNews: EditNewsDto, id: number) {
-    let editableNews = await this.findById(id);
-    const filtredNewNews = this.filter(editableNews, newNews);
-    if (editableNews) {
-      editableNews = {
-        ...editableNews,
+    let _editableNews = await this.findById(id);
+    const filtredNewNews = this.filter(_editableNews, newNews);
+    if (_editableNews) {
+      _editableNews = {
+        ..._editableNews,
         ...filtredNewNews,
       };
-      this.newsRepository.save(editableNews);
+      this.newsRepository.save(_editableNews);
       return {
         change: true,
-        news: editableNews,
+        news: _editableNews,
         filterNewNews: filtredNewNews,
       };
     }
@@ -73,12 +73,19 @@ export class NewsService {
     return filtredNewNews;
   }
 
-  findById(id: number): Promise<NewsEntity> {
-    return this.newsRepository.findOne({ id }, { relations: ['user'] });
+  getAll(): Promise<NewsEntity[]> {
+    return this.newsRepository.find({ relations: ['user'] });
   }
 
-  getAll(): Promise<NewsEntity[]> {
-    return this.newsRepository.find({});
+  findByUserId(idUser: number): Promise<NewsEntity[]> {
+    return this.newsRepository.find({
+      where: { user: { id: idUser } },
+      relations: ['user'],
+    });
+  }
+
+  findById(id: number): Promise<NewsEntity> {
+    return this.newsRepository.findOne({ id }, { relations: ['user'] });
   }
 
   async remove(id: number): Promise<boolean> {

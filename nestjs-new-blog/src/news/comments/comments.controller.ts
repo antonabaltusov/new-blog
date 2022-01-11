@@ -53,7 +53,6 @@ export class CommentsController {
     return { comments, idNews, title: `комментарии` };
   }
 
-
   @Post('/api/:idNews')
   @UseInterceptors(FileInterceptor('comment'))
   async create(

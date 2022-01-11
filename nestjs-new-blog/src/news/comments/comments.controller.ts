@@ -17,6 +17,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { UsersService } from 'src/users/users.service';
 import { HelperFileLoader } from 'src/utils/HelperFileLoader';
 import { NewsService } from '../news.service';
 import { CommentsService } from './comments.service';
@@ -31,6 +32,7 @@ export class CommentsController {
   constructor(
     private readonly commentService: CommentsService,
     private readonly newsService: NewsService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get('create/:id')
@@ -43,78 +45,84 @@ export class CommentsController {
     return { id, idCommentInt, title: 'создание комментария' };
   }
 
-  @Post('/api/:idNews')
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      fileFilter: (req: any, file: any, cb: any) => {
-        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          cb(null, true);
-        } else {
-          cb(
-            new HttpException(
-              `Unsupported file type ${extname(file.originalname)}`,
-              HttpStatus.BAD_REQUEST,
-            ),
-            false,
-          );
-        }
-      },
-      storage: diskStorage({
-        destination: HelperFileLoader.destinationPath,
-        filename: HelperFileLoader.customFileName,
-      }),
-    }),
-  )
-  create(
-    @Param('idNews') idNews: string,
-    @Query('idComment') idComment: string,
-    @Body() comment: CreateCommentDto,
-    @UploadedFile() avatar: Express.Multer.File,
-  ) {
-    const idNewsInt = parseInt(idNews);
-    if (this.newsService.find(idNewsInt)) {
-      const idCommentInt = parseInt(idComment);
-      if (avatar?.filename) {
-        comment.avatar = PATH_NEWS + avatar.filename;
-      }
-      return this.commentService.create(idNewsInt, comment, idCommentInt);
-    }
-    return 'новость отсутствует';
-  }
-
   @Get('/:idNews')
   @Render('comment-list')
-  get(@Param('idNews') idNews: string) {
-    const idNewsInt = parseInt(idNews);
-    const comments = this.commentService.find(idNewsInt);
+  async get(@Param('idNews', ParseIntPipe) idNews: number) {
+    const comments = await this.commentService.findByNewsId(idNews);
+    console.log(comments);
     return { comments, idNews, title: `комментарии` };
   }
 
-  @Delete('/api/:idNews/:idComment')
-  remove(
-    @Param('idNews') idNews: string,
-    @Param('idComment') idComment: string,
+
+  @Post('/api/:idNews')
+  @UseInterceptors(FileInterceptor('comment'))
+  async create(
+    @Param('idNews', ParseIntPipe) idNews: number,
+    @Query('idComment') idComment: string,
+    @Body() comment: CreateCommentDto,
   ) {
-    const idNewsInt = parseInt(idNews);
-    const idCommentInt = parseInt(idComment);
-    return this.commentService.remove(idNewsInt, idCommentInt);
+    const _user = await this.usersService.findById(parseInt(comment.authorId));
+    if (!_user) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Не существует такого автора',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const _news = await this.newsService.findById(idNews);
+    if (!_news) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Новость была не найдена',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    if (idComment) {
+      const _comment = await this.commentService.findById(parseInt(idComment));
+      if (!_comment) {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'Комментарий была не найдена',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    }
+    return await this.commentService.create(_news, comment, idComment);
   }
 
-  @Delete('/api/all')
-  removeAll(@Query('idNews') idNews: string): boolean {
-    const idNewsInt = parseInt(idNews);
-    return this.commentService.removeAll(idNewsInt);
-  }
+  // 
 
-  @Patch('/api/:idNews/:idComment')
-  edit(
-    @Param('idNews') idNews: string,
-    @Param('idComment') idComment: string,
-    @Body() news: EditCommentDto,
-  ): string {
-    const idNewsInt = parseInt(idNews);
-    const idCommentInt = parseInt(idComment);
-    const isEdit = this.commentService.edit(idNewsInt, idCommentInt, news);
-    return isEdit ? 'Новость изменена' : 'Передан неверный идентификатор';
-  }
+  // @Delete('/api/:idNews/:idComment')
+  // remove(
+  //   @Param('idNews') idNews: string,
+  //   @Param('idComment') idComment: string,
+  // ) {
+  //   const idNewsInt = parseInt(idNews);
+  //   const idCommentInt = parseInt(idComment);
+  //   return this.commentService.remove(idNewsInt, idCommentInt);
+  // }
+
+  // @Delete('/api/all')
+  // removeAll(@Query('idNews') idNews: string): boolean {
+  //   const idNewsInt = parseInt(idNews);
+  //   return this.commentService.removeAll(idNewsInt);
+  // }
+
+  // @Patch('/api/:idNews/:idComment')
+  // edit(
+  //   @Param('idNews') idNews: string,
+  //   @Param('idComment') idComment: string,
+  //   @Body() news: EditCommentDto,
+  // ): string {
+  //   const idNewsInt = parseInt(idNews);
+  //   const idCommentInt = parseInt(idComment);
+  //   const isEdit = this.commentService.edit(idNewsInt, idCommentInt, news);
+  //   return isEdit ? 'Новость изменена' : 'Передан неверный идентификатор';
+  // }
 }

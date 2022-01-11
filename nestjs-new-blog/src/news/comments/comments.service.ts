@@ -66,7 +66,10 @@ export class CommentsService {
   }
 
   async findByNewsId(idNews: number): Promise<CommentsEntity[]> {
-    return this.commentsRepository.find({ where: { news: { id: idNews } } });
+    return this.commentsRepository.find({
+      where: { news: { id: idNews } },
+      relations: ['user'],
+    });
   }
 
   async removeById(id: number): Promise<boolean> {
@@ -78,9 +81,9 @@ export class CommentsService {
     return false;
   }
 
-  // removeAll(idNews: number): boolean {
-  //   return delete this.comments?.[idNews];
-  // }
+  removeAllByNewsId(idNews: number) {
+    return this.commentsRepository.delete({ news: { id: idNews } });
+  }
 
   async edit(id: number, message: string): Promise<boolean> {
     let _editableComment = await this.findById(id);
@@ -89,6 +92,7 @@ export class CommentsService {
         ..._editableComment,
         message,
       };
+      await this.commentsRepository.save(_editableComment);
       return true;
     }
     return false;

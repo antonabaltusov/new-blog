@@ -96,33 +96,22 @@ export class CommentsController {
     return await this.commentService.create(_news, comment, idComment);
   }
 
-  // 
+  @Delete('/api/:idComment')
+  async remove(@Param('idComment', ParseIntPipe) idComment: number) {
+    return this.commentService.removeById(idComment);
+  }
 
-  // @Delete('/api/:idNews/:idComment')
-  // remove(
-  //   @Param('idNews') idNews: string,
-  //   @Param('idComment') idComment: string,
-  // ) {
-  //   const idNewsInt = parseInt(idNews);
-  //   const idCommentInt = parseInt(idComment);
-  //   return this.commentService.remove(idNewsInt, idCommentInt);
-  // }
+  @Delete('/api/all/:idNews')
+  removeAllByNewsId(@Param('idNews') idNews: number) {
+    return this.commentService.removeAllByNewsId(idNews);
+  }
 
-  // @Delete('/api/all')
-  // removeAll(@Query('idNews') idNews: string): boolean {
-  //   const idNewsInt = parseInt(idNews);
-  //   return this.commentService.removeAll(idNewsInt);
-  // }
-
-  // @Patch('/api/:idNews/:idComment')
-  // edit(
-  //   @Param('idNews') idNews: string,
-  //   @Param('idComment') idComment: string,
-  //   @Body() news: EditCommentDto,
-  // ): string {
-  //   const idNewsInt = parseInt(idNews);
-  //   const idCommentInt = parseInt(idComment);
-  //   const isEdit = this.commentService.edit(idNewsInt, idCommentInt, news);
-  //   return isEdit ? 'Новость изменена' : 'Передан неверный идентификатор';
-  // }
+  @Patch('/api/:idComment')
+  async edit(
+    @Param('idComment', ParseIntPipe) idComment: number,
+    @Body() comment: EditCommentDto,
+  ): Promise<string> {
+    const isEdit = await this.commentService.edit(idComment, comment.message);
+    return isEdit ? 'Новость изменена' : 'Передан неверный идентификатор';
+  }
 }

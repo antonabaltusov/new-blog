@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { hash } from '../utils/crypto';
+import { EditUserDto } from './dtos/edit-user-dto';
 
 @Injectable()
 export class UsersService {
@@ -27,5 +28,16 @@ export class UsersService {
 
   async findByEmail(email): Promise<UsersEntity> {
     return await this.usersRepository.findOne({ email });
+  }
+
+  async edit(editUser: EditUserDto, id: number) {
+    const _editableUser = await this.findById(id);
+    if (_editableUser) {
+      _editableUser.firstName = editUser.firstName;
+      _editableUser.email = editUser.email;
+      await this.usersRepository.save(_editableUser);
+      return true;
+    }
+    return false;
   }
 }

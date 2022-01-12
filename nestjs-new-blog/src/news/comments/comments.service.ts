@@ -86,12 +86,9 @@ export class CommentsService {
   }
 
   async edit(id: number, message: string): Promise<boolean> {
-    let _editableComment = await this.findById(id);
+    const _editableComment = await this.findById(id);
     if (_editableComment) {
-      _editableComment = {
-        ..._editableComment,
-        message,
-      };
+      _editableComment.message = message;
       await this.commentsRepository.save(_editableComment);
       return true;
     }

@@ -132,7 +132,7 @@ export class NewsController {
     //return 'новость не найдена';
   }
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.Admin, Role.Moderator, Role.User )
+  @Roles(Role.Admin, Role.Moderator, Role.User)
   @Post('/api')
   @UseInterceptors(
     FileInterceptor('cover', {

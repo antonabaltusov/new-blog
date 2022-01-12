@@ -6,6 +6,8 @@ import { MailModule } from 'src/mail/mail.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NewsEntity } from './news.entity';
 import { UsersModule } from 'src/users/users.module';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from 'src/auth/role/roles.guard';
 
 @Module({
   controllers: [NewsController],

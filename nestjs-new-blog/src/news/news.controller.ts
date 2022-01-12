@@ -13,6 +13,7 @@ import {
   Render,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
 import { CommentsService } from './comments/comments.service';
@@ -25,6 +26,10 @@ import { extname } from 'path';
 import { MailService } from 'src/mail/mail.service';
 import { NewsEntity } from './news.entity';
 import { UsersService } from 'src/users/users.service';
+import { LocalAuthGuard } from 'src/auth/local-auth.guard';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Roles } from 'src/auth/role/roles.decorator';
+import { Role } from 'src/auth/role/role.enum';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
@@ -126,12 +131,13 @@ export class NewsController {
     // }
     //return 'новость не найдена';
   }
-
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.Admin, Role.Moderator, Role.User )
   @Post('/api')
   @UseInterceptors(
     FileInterceptor('cover', {
       fileFilter: (req: any, file: any, cb: any) => {
-        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/i)) {
           cb(null, true);
         } else {
           cb(

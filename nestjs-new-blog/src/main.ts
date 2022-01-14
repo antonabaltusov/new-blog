@@ -20,6 +20,9 @@ async function bootstrap() {
       extname: 'hbs',
     }),
   );
+  hbs.registerHelper('isAdmin', function (role) {
+    return role === 'admin';
+  });
   hbs.registerPartials(__dirname + '/views/partials');
   app.setViewEngine('hbs');
 

@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { hash } from '../utils/crypto';
 import { EditUserDto } from './dtos/edit-user-dto';
+import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 
 @Injectable()
 export class UsersService {
@@ -30,14 +31,25 @@ export class UsersService {
     return await this.usersRepository.findOne({ email });
   }
 
-  async edit(editUser: EditUserDto, id: number) {
-    const _editableUser = await this.findById(id);
-    if (_editableUser) {
-      _editableUser.firstName = editUser.firstName;
-      _editableUser.email = editUser.email;
-      await this.usersRepository.save(_editableUser);
+  async edit(user: EditUserDto, id: number) {
+    const _user = await this.findById(id);
+    if (_user) {
+      _user.firstName = user.firstName || _user.firstName;
+      _user.email = user.email || _user.email;
+      if (checkPermission(Modules.changeRole, _user.roles)) {
+        _user.roles = user.roles || _user.roles;
+      }
+      _user.password = (await hash(user.password)) || _user.password;
+
+      await this.usersRepository.save(_user);
       return true;
     }
-    return false;
+    throw new HttpException(
+      {
+        status: HttpStatus.FORBIDDEN,
+        error: 'Неверный идентификатор пользователя',
+      },
+      HttpStatus.FORBIDDEN,
+    );
   }
 }

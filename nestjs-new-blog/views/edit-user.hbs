@@ -1,15 +1,26 @@
 <h1>Редактирование новости</h1>
-{{#if user}}
-  <form method="patch" action="/news/api" enctype="multipart/form-data">
+{{#if _user}}
+  <form>
     <div class="mb-3">
       <label for="firstNameInput" class="form-label">firstName</label>
-      <input class="form-control" name="firstName" id="firstNameInput" value="{{user.firstName}}">
+      <input class="form-control" name="firstName" id="firstNameInput" value="{{_user.firstName}}">
     </div>
     <div class="mb-3">
       <label for="emailInput" class="form-label">email</label>
-      <textarea class="form-control" name="email" id="emailInput" rows="3">{{user.email}}</textarea>
+      <input class="form-control" name="email" id="emailInput" value="{{_user.email}}">
     </div>
-    <button type="button" class="btn btn-primary" onclick='sendForm({{user.id}})'>отправить</button>
+    {{#if _user.roles}}
+    <div class="mb-3">
+      <label for="rolesInput" class="form-label">roles</label>
+      <input class="form-control" name="roles" id="rolesInput" value="{{_user.roles}}">
+    </div>
+    {{/if}}
+    <div class="mb-3">
+      <label for="passwordInput" class="form-label">password</label>
+      <input class="form-control" name="password" id="passwordInput">
+    </div>
+    
+    <button type="button" class="btn btn-primary" onclick='sendForm()'>отправить</button>
   </form>
 {{else}}
   <h1>пользователь отсутствует!</h1>
@@ -20,15 +31,18 @@
   function sendForm(id) {
     var data = new FormData($('form')[0]);
     $.ajax({
-      url: `/users/api/${id}`,
+      url: `/users/api/`,
       data: data,
+      headers: {
+        "Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiaWF0IjoxNjQyMTU0MTc4LCJleHAiOjE2NDIxNTc3Nzh9.jhtVtHWhthVCxvjnXZ6-M3T04TxF9Rx304sVXM4Kano"
+      },
       cache: false,
       contentType: false,
       processData: false,
       method: 'PATCH',
       success: function() {
         alert('успешно')
-        window.location.href = `/news/all`;
+        window.location.reload();
       }
     });
   }

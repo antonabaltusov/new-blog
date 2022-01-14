@@ -2,11 +2,14 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Render,
+  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -14,6 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Role } from 'src/auth/role/role.enum';
 import { Roles } from 'src/auth/role/roles.decorator';
+import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 import { CreateUserDto } from './dtos/create-user-dto';
 import { EditUserDto } from './dtos/edit-user-dto';
 import { UsersService } from './users.service';
@@ -25,8 +29,21 @@ export class UsersController {
   @Get('/edit/:id')
   @Render('edit-user')
   async editView(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersServise.findById(id);
-    return { user, title: 'Редактирование пользователя' };
+    const _user = await this.usersServise.findById(id);
+    console.log(_user);
+    if (!_user) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Неверный идентификатор пользователя',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    if (!checkPermission(Modules.changeRole, _user.roles)) {
+      _user.roles = null;
+    }
+    return { _user, title: 'Редактирование пользователя' };
   }
 
   @Get('login')
@@ -39,15 +56,12 @@ export class UsersController {
   async create(@Body() user: CreateUserDto) {
     return this.usersServise.create(user);
   }
-  
-  @Patch('/api/:id')
+
+  @Patch('/api/')
   @UseInterceptors(FileInterceptor('user'))
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.User)
-  async edit(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() editUser: EditUserDto,
-  ): Promise<boolean> {
-    return await this.usersServise.edit(editUser, id);
+  async edit(@Req() req, @Body() editUser: EditUserDto): Promise<boolean> {
+    const JwtUserId = req.user.userId;
+    return await this.usersServise.edit(editUser, JwtUserId);
   }
 }

@@ -30,7 +30,7 @@ class Comments extends React.Component {
 
     this.socket.on('newComment', (message) => {
       const comments = this.state.comments;
-      comments.push(message);
+      comments.unshift(message);
       this.setState(comments);
     });
     this.socket.on('removeComment', (payload) => {
@@ -60,10 +60,12 @@ class Comments extends React.Component {
   };
 
   sendMessage = () => {
-    this.socket.emit('addComment', {
-      idNews: this.idNews,
-      message: this.state.message,
-    });
+    if (this.state.message) {
+      this.socket.emit('addComment', {
+        idNews: this.idNews,
+        message: this.state.message,
+      });
+    }
   };
 
   render() {

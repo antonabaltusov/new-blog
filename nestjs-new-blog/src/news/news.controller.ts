@@ -87,7 +87,7 @@ export class NewsController {
     return { title: 'создание новости' };
   }
 
-  @Get('/:id/detail')
+  @Get('/detail/:id')
   @Render('detail-news')
   async detailView(@Param('id', ParseIntPipe) id: number) {
     const news = await this.newsService.findById(id);

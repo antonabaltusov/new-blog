@@ -11,12 +11,15 @@ import {
   Post,
   Query,
   Render,
+  Req,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
 import { HelperFileLoader } from 'src/utils/HelperFileLoader';
 import { NewsService } from '../news.service';
@@ -31,7 +34,6 @@ HelperFileLoader.path = PATH_NEWS;
 export class CommentsController {
   constructor(
     private readonly commentService: CommentsService,
-    private readonly newsService: NewsService,
     private readonly usersService: UsersService,
   ) {}
 
@@ -53,29 +55,27 @@ export class CommentsController {
     return { comments, idNews, title: `комментарии` };
   }
 
+  @Get('/api/:idNews')
+  async getAll(@Param('idNews', ParseIntPipe) idNews: number) {
+    return await this.commentService.findByNewsId(idNews);
+  }
+
   @Post('/api/:idNews')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('comment'))
   async create(
     @Param('idNews', ParseIntPipe) idNews: number,
     @Query('idComment') idComment: string,
     @Body() comment: CreateCommentDto,
+    @Req() req,
   ) {
-    const _user = await this.usersService.findById(parseInt(comment.authorId));
+    const JwtUserId = req.user.userId;
+    const _user = await this.usersService.findById(JwtUserId);
     if (!_user) {
       throw new HttpException(
         {
           status: HttpStatus.NOT_FOUND,
           error: 'Не существует такого автора',
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
-    const _news = await this.newsService.findById(idNews);
-    if (!_news) {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'Новость была не найдена',
         },
         HttpStatus.NOT_FOUND,
       );
@@ -92,7 +92,12 @@ export class CommentsController {
         );
       }
     }
-    return await this.commentService.create(_news, comment, idComment);
+    return await this.commentService.create(
+      idNews,
+      comment.message,
+      JwtUserId,
+      idComment,
+    );
   }
 
   @Delete('/api/:idComment')

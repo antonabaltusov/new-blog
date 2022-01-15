@@ -14,7 +14,17 @@
       <a href="http://localhost:3000/news/edit/news/{{news.id}}" class="btn btn-primary m-1" role="button" data-bs-toggle="button">редактировать</a>
     </div>
   </div>
-{{#if comments}}
+
+  <!-- Блок комментариев -->
+<h2 class="fw-bold lh-1 mb-3">Комментарии</h2>
+<!-- Блок, куда ReactJS будет вставлять вёрстку комментариев -->
+<div id="app">
+</div>
+
+<!-- Подключим ReactJS-скрипт комментариев -->
+<script src="/js/comments.js" type="text/babel"></script>
+
+{{!-- {{#if comments}}
     {{#each comments}}
       <div class="list-group">
         <a href="{{#unless this.blockcomment}}http://localhost:3000/comments/create/{{../news.id}}?idComment={{this.id}}{{else}}#{{/unless}}" class="list-group-item {{#unless this.blockcomment}}list-group-item-action{{/unless}} d-flex gap-3 py-3" aria-current="true">
@@ -46,7 +56,7 @@
     {{/each}}
 {{else}}
   <h3>нет комментариев</h3>
-{{/if}}
+{{/if}} --}}
 {{else}}
   <h1>Новость отсутствует!</h1>
 {{/if}}

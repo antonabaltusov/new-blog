@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from '../../users/users.service';
 import { Repository } from 'typeorm';
-import { NewsEntity } from '../news.entity';
 import { NewsService } from '../news.service';
 import { CommentsEntity } from './comments.entity';
-import { CreateCommentDto } from './dtos/create-comment-dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export type Comment = {
   id?: number;
@@ -15,10 +14,6 @@ export type Comment = {
   reply?: Comment[];
   blockcomment?: boolean;
 };
-
-interface CommentsBase {
-  [key: string]: Comment[];
-}
 
 export type EditComment = {
   message?: string;
@@ -37,16 +32,29 @@ export class CommentsService {
     @InjectRepository(CommentsEntity)
     private commentsRepository: Repository<CommentsEntity>,
     private usersService: UsersService,
+    private readonly newsService: NewsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
-    _news: NewsEntity,
-    comment: CreateCommentDto,
+    idNews: number,
+    message: string,
+    idUser: number,
     idComment?: string,
   ) {
-    const _user = await this.usersService.findById(parseInt(comment.authorId));
+    const _news = await this.newsService.findById(idNews);
+    if (!_news) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Новость была не найдена',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const _user = await this.usersService.findById(idUser);
     const _newComment = new CommentsEntity();
-    _newComment.message = comment.message;
+    _newComment.message = message;
     _newComment.user = _user;
     _newComment.news = _news;
     // if (idComment) {
@@ -72,10 +80,17 @@ export class CommentsService {
     });
   }
 
-  async removeById(id: number): Promise<boolean> {
-    const _removeComment = await this.findById(id);
-    if (_removeComment) {
-      this.commentsRepository.remove(_removeComment);
+  async removeById(idComment: number): Promise<boolean> {
+    const _comment = await this.commentsRepository.findOne({
+      where: { id: idComment },
+      relations: ['news'],
+    });
+    if (_comment) {
+      this.commentsRepository.remove(_comment);
+      this.eventEmitter.emit('comment.remove', {
+        commentId: idComment,
+        newsId: _comment.news.id,
+      });
       return true;
     }
     return false;

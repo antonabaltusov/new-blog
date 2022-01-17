@@ -17,11 +17,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Socket } from 'socket.io';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { LocalAuthGuard } from 'src/auth/local-auth.guard';
 import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
+import { WsJwtGuard } from 'src/auth/ws-jwt.guard';
 import { UsersService } from 'src/users/users.service';
 import { HelperFileLoader } from 'src/utils/HelperFileLoader';
 import { NewsService } from '../news.service';
@@ -111,13 +113,18 @@ export class CommentsController {
   removeAllByNewsId(@Param('idNews') idNews: number) {
     return this.commentService.removeAllByNewsId(idNews);
   }
-
+  @UseGuards(WsJwtGuard)
   @Patch('/api/:idComment')
   async edit(
+    client: Socket,
     @Param('idComment', ParseIntPipe) idComment: number,
     @Body() comment: EditCommentDto,
   ): Promise<string> {
-    const isEdit = await this.commentService.edit(idComment, comment.message);
+    const isEdit = await this.commentService.edit(
+      idComment,
+      comment.message,
+      client.data.user.id,
+    );
     return isEdit ? 'Новость изменена' : 'Передан неверный идентификатор';
   }
 }

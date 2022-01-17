@@ -120,19 +120,18 @@ export class CommentsService {
     return this.commentsRepository.delete({ news: { id: idNews } });
   }
 
-  async edit(idComment: number, message: string): Promise<boolean> {
+  async edit(
+    idComment: number,
+    message: string,
+    idUser: number,
+  ): Promise<boolean> {
     const _сomment = await this.commentsRepository.findOne({
       where: { id: idComment },
-      relations: ['news'],
+      relations: ['user'],
     });
-    if (_сomment) {
+    if (_сomment && _сomment.user.id === idUser) {
       _сomment.message = message;
       await this.commentsRepository.update(_сomment.id, _сomment);
-      this.eventEmitter.emit('comment.edit', {
-        commentId: _сomment.id,
-        commentMessage: _сomment.message,
-        newsId: _сomment.news.id,
-      });
       return true;
     }
     return false;

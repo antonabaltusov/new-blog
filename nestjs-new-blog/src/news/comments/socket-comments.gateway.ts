@@ -49,15 +49,22 @@ export class SocketCommentsGateway
         .emit('removeComment', { id: idComment });
     }
   }
-
-  @OnEvent('comment.edit')
-  handleEditCommentEvent(payload) {
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('comment.edit')
+  async handleEditCommentEvent(client: Socket, payload) {
     const { commentMessage, commentId, newsId } = payload;
-    console.log(commentId, newsId);
-    this.server.to(newsId.toString()).emit('editComment', {
-      commentId: commentId,
-      commentMessage: commentMessage,
-    });
+    if (
+      await this.commentsService.edit(
+        commentId,
+        commentMessage,
+        client.data.user.id,
+      )
+    ) {
+      this.server.to(newsId.toString()).emit('editComment', {
+        commentId: commentId,
+        commentMessage: commentMessage,
+      });
+    }
   }
 
   afterInit(server: Server) {

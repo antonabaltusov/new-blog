@@ -52,7 +52,6 @@ class Comments extends React.Component {
         }
         return c;
       });
-      console.log(comments);
       this.setState({ comments });
     });
   }
@@ -92,6 +91,16 @@ class Comments extends React.Component {
     this.setState({ [name]: value });
   };
 
+  handleChange({ target: { value } }, id) {
+    const comments = this.state.comments.map((c) => {
+      if (c.id === id) {
+        c.message = value;
+      }
+      return c;
+    });
+    this.setState({ comments });
+  }
+
   sendMessage = () => {
     if (this.state.message) {
       this.socket.emit('addComment', {
@@ -108,12 +117,34 @@ class Comments extends React.Component {
     });
   };
 
-  editMessage = (key) => {
-    console.log(key)
+  openRedact = (id) => {
+    const comments = this.state.comments.map((c) => {
+      if (c.id === id) {
+        c.activeRedact = true;
+      }
+      return c;
+    });
+    this.setState({ comments });
     // this.socket.emit('comment.edit', {
     //   idNews: this.idNews,
     //   idComment: idComment,
     // });
+  };
+
+  saveEdit = (id) => {
+    const comment = this.state.comments.find((c) => c.id === id);
+    this.socket.emit('comment.edit', {
+      newsId: this.idNews,
+      commentId: id,
+      commentMessage: comment.message,
+    });
+    const comments = this.state.comments.map((c) => {
+      if (c.id === id) {
+        c.activeRedact = false;
+      }
+      return c;
+    });
+    this.setState({ comments });
   };
 
   render() {
@@ -134,7 +165,7 @@ class Comments extends React.Component {
                 }
                 {comment.user.id === this.state.user.id &&
                 <button
-                  onClick={() => this.editMessage(comment.id)}
+                  onClick={() => this.openRedact(comment.id)}
                   className="btn btn-outline-info btn-sm px-4 me-sm-3 fw-bold"
                 >
                     edit
@@ -143,7 +174,27 @@ class Comments extends React.Component {
               </div>
               <div className="card-body">
                 <strong>{comment.user.firstName}</strong>
-                <div>{comment.message}</div>
+                {comment.activeRedact ? (
+                                      <div>
+                                        <h6 className="lh-1 mt-3">редактирование комментария</h6>
+                                        <div className="form-floating mb-1">
+                                          <textarea
+                                          className="form-control"
+                                          placeholder="Leave a comment here"
+                                          value={comment.message}
+                                          onChange={(e) => this.handleChange(e, comment.id)}
+                                          ></textarea>
+                                        </div>
+                                        <button
+                                          onClick={() => this.saveEdit(comment.id)}
+                                          className="btn btn-outline-info btn-sm px-4 me-sm-3 fw-bold"
+                                        >
+                                          save
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div>{comment.message}</div>
+                                    )}
               </div>
             </div>
           );

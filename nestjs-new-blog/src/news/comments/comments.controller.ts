@@ -20,6 +20,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { LocalAuthGuard } from 'src/auth/local-auth.guard';
+import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 import { UsersService } from 'src/users/users.service';
 import { HelperFileLoader } from 'src/utils/HelperFileLoader';
 import { NewsService } from '../news.service';

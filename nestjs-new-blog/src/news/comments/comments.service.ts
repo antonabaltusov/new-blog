@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { NewsService } from '../news.service';
 import { CommentsEntity } from './comments.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
+import { UsersEntity } from 'src/users/users.entity';
 
 export type Comment = {
   id?: number;
@@ -73,8 +75,8 @@ export class CommentsService {
     return this.commentsRepository.findOne(id);
   }
 
-  async findByNewsId(idNews: number): Promise<CommentsEntity[]> {
-    return this.commentsRepository.find({
+  async findByNewsId(idNews: number): Promise<any> {
+    return await this.commentsRepository.find({
       where: { news: { id: idNews } },
       relations: ['user'],
     });
@@ -96,15 +98,41 @@ export class CommentsService {
     return false;
   }
 
+  async removeByIdRole(idComment: number, userId: number): Promise<boolean> {
+    const _comment = await this.commentsRepository.findOne({
+      where: { id: idComment },
+      relations: ['user'],
+    });
+    if (_comment) {
+      const _user: UsersEntity = await this.usersService.findById(userId);
+      if (
+        checkPermission(Modules.isAdmin, _user.roles) ||
+        _user.roles === _comment.user.roles
+      ) {
+        this.commentsRepository.remove(_comment);
+        return true;
+      }
+    }
+    return false;
+  }
+
   removeAllByNewsId(idNews: number) {
     return this.commentsRepository.delete({ news: { id: idNews } });
   }
 
-  async edit(id: number, message: string): Promise<boolean> {
-    const _editableComment = await this.findById(id);
-    if (_editableComment) {
-      _editableComment.message = message;
-      await this.commentsRepository.save(_editableComment);
+  async edit(idComment: number, message: string): Promise<boolean> {
+    const _сomment = await this.commentsRepository.findOne({
+      where: { id: idComment },
+      relations: ['news'],
+    });
+    if (_сomment) {
+      _сomment.message = message;
+      await this.commentsRepository.update(_сomment.id, _сomment);
+      this.eventEmitter.emit('comment.edit', {
+        commentId: _сomment.id,
+        commentMessage: _сomment.message,
+        newsId: _сomment.news.id,
+      });
       return true;
     }
     return false;

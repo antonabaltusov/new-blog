@@ -10,8 +10,11 @@ import * as cookie from 'cookie';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Logger, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
-import { WsJwtGuard } from '../../../auth/ws-jwt.guard';
-import { CommentsService } from '../comments.service';
+import { WsJwtGuard } from '../../auth/ws-jwt.guard';
+import { CommentsService } from './comments.service';
+import { UsersEntity } from 'src/users/users.entity';
+import { UsersService } from 'src/users/users.service';
+import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 
 export type Comment = { message: string; idNews: number };
 
@@ -19,7 +22,10 @@ export type Comment = { message: string; idNews: number };
 export class SocketCommentsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private readonly commentsService: CommentsService) {}
+  constructor(
+    private readonly commentsService: CommentsService,
+    private readonly userService: UsersService,
+  ) {}
   @WebSocketServer() server: Server;
   private logger: Logger = new Logger('AppGateway');
 
@@ -32,11 +38,26 @@ export class SocketCommentsGateway
     this.server.to(idNews.toString()).emit('newComment', _comment);
   }
 
-  @OnEvent('comment.remove')
-  handleRemoveCommentEvent(payload) {
-    const { commentId, newsId } = payload;
-    console.log(commentId, newsId);// тут надо сделать удаление
-    this.server.to(newsId.toString()).emit('removeComment', { id: commentId });
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('comment.remove')
+  async handleRemoveCommentEvent(client: Socket, payload) {
+    const { idNews, idComment } = payload;
+    const userId: number = client.data.user.id;
+    if (await this.commentsService.removeByIdRole(idComment, userId)) {
+      this.server
+        .to(idNews.toString())
+        .emit('removeComment', { id: idComment });
+    }
+  }
+
+  @OnEvent('comment.edit')
+  handleEditCommentEvent(payload) {
+    const { commentMessage, commentId, newsId } = payload;
+    console.log(commentId, newsId);
+    this.server.to(newsId.toString()).emit('editComment', {
+      commentId: commentId,
+      commentMessage: commentMessage,
+    });
   }
 
   afterInit(server: Server) {

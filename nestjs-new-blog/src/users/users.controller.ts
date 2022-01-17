@@ -30,7 +30,6 @@ export class UsersController {
   @Render('edit-user')
   async editView(@Param('id', ParseIntPipe) id: number) {
     const _user = await this.usersServise.findById(id);
-    console.log(_user);
     if (!_user) {
       throw new HttpException(
         {
@@ -40,7 +39,7 @@ export class UsersController {
         HttpStatus.FORBIDDEN,
       );
     }
-    if (!checkPermission(Modules.changeRole, _user.roles)) {
+    if (!checkPermission(Modules.isAdmin, _user.roles)) {
       _user.roles = null;
     }
     return { _user, title: 'Редактирование пользователя' };
@@ -63,5 +62,16 @@ export class UsersController {
   async edit(@Req() req, @Body() editUser: EditUserDto): Promise<boolean> {
     const JwtUserId = req.user.userId;
     return await this.usersServise.edit(editUser, JwtUserId);
+  }
+
+  @Get('/api/')
+  @UseGuards(JwtAuthGuard)
+  async getUsersPermisions(@Req() req): Promise<any> {
+    const JwtUserId = req.user.userId;
+    const _user = await this.usersServise.findById(JwtUserId);
+    return {
+      roles: _user.roles,
+      id: _user.id,
+    };
   }
 }

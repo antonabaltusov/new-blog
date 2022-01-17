@@ -28,4 +28,8 @@ export class CommentsEntity {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @Column({ type: 'boolean', default: false })
+  canRemove: boolean;
+
 }

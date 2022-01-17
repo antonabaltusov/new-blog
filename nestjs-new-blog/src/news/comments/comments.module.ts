@@ -6,7 +6,7 @@ import { NewsModule } from '../news.module';
 import { CommentsController } from './comments.controller';
 import { CommentsEntity } from './comments.entity';
 import { CommentsService } from './comments.service';
-import { SocketCommentsGateway } from './dtos/socket-comments.gateway';
+import { SocketCommentsGateway } from './socket-comments.gateway';
 
 @Module({
   controllers: [CommentsController],

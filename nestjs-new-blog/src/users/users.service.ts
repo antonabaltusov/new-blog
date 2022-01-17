@@ -36,7 +36,7 @@ export class UsersService {
     if (_user) {
       _user.firstName = user.firstName || _user.firstName;
       _user.email = user.email || _user.email;
-      if (checkPermission(Modules.changeRole, _user.roles)) {
+      if (checkPermission(Modules.isAdmin, _user.roles)) {
         _user.roles = user.roles || _user.roles;
       }
       _user.password = (await hash(user.password)) || _user.password;

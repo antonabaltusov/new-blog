@@ -15,6 +15,7 @@ import { CommentsService } from './comments.service';
 import { UsersEntity } from 'src/users/users.entity';
 import { UsersService } from 'src/users/users.service';
 import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
+import { EventsComment } from './EventsComment.enum';
 
 export type Comment = { message: string; idNews: number };
 
@@ -38,17 +39,12 @@ export class SocketCommentsGateway
     this.server.to(idNews.toString()).emit('newComment', _comment);
   }
 
-  @UseGuards(WsJwtGuard)
-  @SubscribeMessage('comment.remove')
-  async handleRemoveCommentEvent(client: Socket, payload) {
+  @OnEvent(EventsComment.remove)
+  handleRemoveCommentEvent(payload) {
     const { idNews, idComment } = payload;
-    const userId: number = client.data.user.id;
-    if (await this.commentsService.removeByIdRole(idComment, userId)) {
-      this.server
-        .to(idNews.toString())
-        .emit('removeComment', { id: idComment });
-    }
+    this.server.to(idNews.toString()).emit('removeComment', { id: idComment });
   }
+
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('comment.edit')
   async handleEditCommentEvent(client: Socket, payload) {

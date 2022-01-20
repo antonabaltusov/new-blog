@@ -7,6 +7,7 @@ import { CommentsEntity } from './comments.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 import { UsersEntity } from 'src/users/users.entity';
+import { EventsComment } from './EventsComment.enum';
 
 export type Comment = {
   id?: number;
@@ -82,20 +83,42 @@ export class CommentsService {
     });
   }
 
-  async removeById(idComment: number): Promise<boolean> {
+  async removeById(idComment: number, userId: number): Promise<CommentsEntity> {
     const _comment = await this.commentsRepository.findOne({
       where: { id: idComment },
-      relations: ['news'],
+      relations: ['user', 'news'],
     });
-    if (_comment) {
-      this.commentsRepository.remove(_comment);
-      this.eventEmitter.emit('comment.remove', {
-        commentId: idComment,
-        newsId: _comment.news.id,
-      });
-      return true;
+    if (!_comment) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Комментарий не найден',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
-    return false;
+
+    const _user = await this.usersService.findById(userId);
+
+    if (
+      _user.id !== _comment.user.id &&
+      !checkPermission(Modules.editComment, _user.roles)
+    ) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для удаления',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    const comment = await this.commentsRepository.remove(_comment);
+    this.eventEmitter.emit(EventsComment.remove, {
+      idComment: idComment,
+      idNews: _comment.news.id,
+    });
+
+    return comment;
   }
 
   async removeByIdRole(idComment: number, userId: number): Promise<boolean> {

@@ -104,9 +104,14 @@ export class CommentsController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete('/api/:idComment')
-  async remove(@Param('idComment', ParseIntPipe) idComment: number) {
-    return this.commentService.removeById(idComment);
+  async remove(
+    @Param('idComment', ParseIntPipe) idComment: number,
+    @Req() req,
+  ) {
+    const userId = req.user.id;
+    return this.commentService.removeById(idComment, userId);
   }
 
   @Delete('/api/all/:idNews')

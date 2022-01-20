@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as expressHbs from 'express-handlebars';
 import { join } from 'path';
+import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 import * as hbs from 'hbs';
 import { AppModule } from './app.module';
@@ -12,6 +13,7 @@ async function bootstrap() {
 
   //app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
+  app.use(cookieParser());
   app.engine(
     'hbs',
     expressHbs({

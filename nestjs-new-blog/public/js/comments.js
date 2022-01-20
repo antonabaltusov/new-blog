@@ -2,34 +2,29 @@
 
 const e = React.createElement;
 
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 class Comments extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       comments: [],
       message: '',
-      user: {},
     };
     this.idNews = parseInt(window.location.href.split('/').reverse()[0]);
-    const bearerToken = Cookies.get('authorization');
     this.socket = io('http://localhost:3000', {
       query: {
         newsId: this.idNews,
-      },
-      transportOptions: {
-        polling: {
-          extraHeaders: {
-            Authorization: 'Bearer ' + bearerToken,
-          },
-        },
       },
     });
   }
 
   componentDidMount() {
     this.getAllComments();
-    this.getUser();
-    
 
     this.socket.on('newComment', (message) => {
       const comments = this.state.comments;
@@ -61,29 +56,12 @@ class Comments extends React.Component {
       `http://localhost:3000/comments/api/${this.idNews}`,
       {
         method: 'GET',
-        headers: {
-          Authorization: 'Bearer ' + Cookies.get('authorization'),
-        },
       },
     );
 
     if (response.ok) {
       const comments = await response.json();
       this.setState({ comments });
-    }
-  };
-
-  getUser = async () => {
-    const response = await fetch(`http://localhost:3000/users/api`, {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + Cookies.get('authorization'),
-      },
-    });
-
-    if (response.ok) {
-      const user = await response.json();
-      this.setState({ user });
     }
   };
 
@@ -110,11 +88,11 @@ class Comments extends React.Component {
     }
   };
 
-  removeMessage = (idComment) => {
-    this.socket.emit('comment.remove', {
-      idNews: this.idNews,
-      idComment: idComment,
-    });
+  removeComment = (idComment) => {
+    fetch(`http://localhost:3000/comments/api/${idComment}`, {
+        method: 'DELETE',
+      },
+    );
   };
 
   openRedact = (id) => {
@@ -148,22 +126,23 @@ class Comments extends React.Component {
   };
 
   render() {
+    const userId = parseInt(getCookie('userId'));
+    const userRole = getCookie('userRole');
     return (
       <div>
         {this.state.comments.map((comment, index) => {
           return (
             <div key={comment + index} className="card mb-1">
               <div>
-                {(this.state.user.roles === 'admin' ||
-                  comment.user.id === this.state.user.id) &&
+                {comment.user && (userRole === 'admin' || comment.user.id === userId) && 
                 <button
-                  onClick={() => this.removeMessage(comment.id)}
+                  onClick={() => this.removeComment(comment.id)}
                   className="btn btn-outline-info btn-sm px-4 me-sm-3 fw-bold"
                 >
                     remove
                 </button>
                 }
-                {comment.user.id === this.state.user.id &&
+                {comment.user.id === userId &&
                 <button
                   onClick={() => this.openRedact(comment.id)}
                   className="btn btn-outline-info btn-sm px-4 me-sm-3 fw-bold"

@@ -25,7 +25,11 @@
       },
       data: {username: $('#username')[0].value, password: $('#password')[0].value},
       url: '/auth/login',
-    }).then((data) => {
-    })
+    }).then((response) => {
+      window.location.href = `/news/all`;
+    }, (error) => {
+      console.log(error);
+      alert('Неверный логин или парль');
+    });
   }
 </script>

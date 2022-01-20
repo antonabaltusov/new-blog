@@ -45,22 +45,13 @@ export class SocketCommentsGateway
     this.server.to(idNews.toString()).emit('removeComment', { id: idComment });
   }
 
-  @UseGuards(WsJwtGuard)
-  @SubscribeMessage('comment.edit')
-  async handleEditCommentEvent(client: Socket, payload) {
-    const { commentMessage, commentId, newsId } = payload;
-    if (
-      await this.commentsService.edit(
-        commentId,
-        commentMessage,
-        client.data.user.id,
-      )
-    ) {
-      this.server.to(newsId.toString()).emit('editComment', {
-        commentId: commentId,
-        commentMessage: commentMessage,
-      });
-    }
+  @OnEvent(EventsComment.edit)
+  async handleEditCommentEvent(payload) {
+    const { commentMessage, idComment, idNews } = payload;
+    this.server.to(idNews.toString()).emit('editComment', {
+      commentId: idComment,
+      commentMessage: commentMessage,
+    });
   }
 
   afterInit(server: Server) {

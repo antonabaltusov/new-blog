@@ -44,6 +44,7 @@ class Comments extends React.Component {
       const comments = this.state.comments.map((c) => {
         if (c.id === commentId) {
           c.message = commentMessage;
+          c.activeRedact = false;
         }
         return c;
       });
@@ -90,9 +91,8 @@ class Comments extends React.Component {
 
   removeComment = (idComment) => {
     fetch(`http://localhost:3000/comments/api/${idComment}`, {
-        method: 'DELETE',
-      },
-    );
+      method: 'DELETE',
+    });
   };
 
   openRedact = (id) => {
@@ -103,26 +103,29 @@ class Comments extends React.Component {
       return c;
     });
     this.setState({ comments });
-    // this.socket.emit('comment.edit', {
-    //   idNews: this.idNews,
-    //   idComment: idComment,
-    // });
   };
 
   saveEdit = (id) => {
     const comment = this.state.comments.find((c) => c.id === id);
-    this.socket.emit('comment.edit', {
-      newsId: this.idNews,
-      commentId: id,
-      commentMessage: comment.message,
+    fetch(`http://localhost:3000/comments/api/${comment.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: comment.message }),
     });
-    const comments = this.state.comments.map((c) => {
-      if (c.id === id) {
-        c.activeRedact = false;
-      }
-      return c;
-    });
-    this.setState({ comments });
+
+    // if (response.ok) {
+    //   const comments = await response.json();
+    //   this.setState({ comments });
+    // }
+    // const comments = this.state.comments.map((c) => {
+    //   if (c.id === id) {
+    //     c.activeRedact = false;
+    //   }
+    //   return c;
+    // });
+    // this.setState({ comments });
   };
 
   render() {

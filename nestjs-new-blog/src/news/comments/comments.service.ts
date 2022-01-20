@@ -121,24 +121,6 @@ export class CommentsService {
     return comment;
   }
 
-  async removeByIdRole(idComment: number, userId: number): Promise<boolean> {
-    const _comment = await this.commentsRepository.findOne({
-      where: { id: idComment },
-      relations: ['user'],
-    });
-    if (_comment) {
-      const _user: UsersEntity = await this.usersService.findById(userId);
-      if (
-        checkPermission(Modules.isAdmin, _user.roles) ||
-        _user.roles === _comment.user.roles
-      ) {
-        this.commentsRepository.remove(_comment);
-        return true;
-      }
-    }
-    return false;
-  }
-
   removeAllByNewsId(idNews: number) {
     return this.commentsRepository.delete({ news: { id: idNews } });
   }
@@ -147,16 +129,39 @@ export class CommentsService {
     idComment: number,
     message: string,
     idUser: number,
-  ): Promise<boolean> {
-    const _сomment = await this.commentsRepository.findOne({
+  ): Promise<CommentsEntity> {
+    const _comment = await this.commentsRepository.findOne({
       where: { id: idComment },
-      relations: ['user'],
+      relations: ['user', 'news'],
     });
-    if (_сomment && _сomment.user.id === idUser) {
-      _сomment.message = message;
-      await this.commentsRepository.update(_сomment.id, _сomment);
-      return true;
+
+    if (!_comment) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Комментарий не найден',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
-    return false;
+
+    if (idUser !== _comment.user.id) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для редактирования',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    _comment.message = message;
+    const comment = await this.commentsRepository.save(_comment);
+    this.eventEmitter.emit(EventsComment.edit, {
+      idComment: idComment,
+      idNews: _comment.news.id,
+      commentMessage: message,
+    });
+    return comment;
   }
 }

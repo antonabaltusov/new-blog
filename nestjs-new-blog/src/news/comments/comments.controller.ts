@@ -10,7 +10,6 @@ import {
   Patch,
   Post,
   Query,
-  Render,
   Req,
   UseGuards,
   UseInterceptors,
@@ -33,24 +32,6 @@ export class CommentsController {
     private readonly usersService: UsersService,
   ) {}
 
-  @Get('create/:id')
-  @Render('create-comment')
-  createView(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('idComment') idComment: string,
-  ) {
-    const idCommentInt = parseInt(idComment);
-    return { id, idCommentInt, title: 'создание комментария' };
-  }
-
-  @Get('/:idNews')
-  @Render('comment-list')
-  async get(@Param('idNews', ParseIntPipe) idNews: number) {
-    const comments = await this.commentService.findByNewsId(idNews);
-    console.log(comments);
-    return { comments, idNews, title: `комментарии` };
-  }
-
   @Get('/api/:idNews')
   async getAll(@Param('idNews', ParseIntPipe) idNews: number) {
     return await this.commentService.findByNewsId(idNews);
@@ -65,7 +46,7 @@ export class CommentsController {
     @Body() comment: CreateCommentDto,
     @Req() req,
   ) {
-    const JwtUserId = req.user.userId;
+    const JwtUserId = req.user.id;
     const _user = await this.usersService.findById(JwtUserId);
     if (!_user) {
       throw new HttpException(
@@ -118,7 +99,6 @@ export class CommentsController {
     @Param('idComment', ParseIntPipe) idComment: number,
     @Body() { message }: EditCommentDto,
   ) {
-    console.log(message);
     return await this.commentService.edit(idComment, message, req.user.id);
   }
 }

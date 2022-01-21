@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { NewsEntity } from '../news/news.entity';
 import { Role } from '../auth/role/role.enum';
+import { Exclude } from 'class-transformer';
 //import { CommentsEntity } from '../news/comments/comments.entity';
 
 @Entity('users')
@@ -29,6 +30,9 @@ export class UsersEntity {
   @Column('text')
   @IsEnum(Role)
   roles: Role;
+
+  @Column('text', { nullable: true })
+  avatar: string;
 
   @OneToMany(() => NewsEntity, (news) => news.user)
   news: NewsEntity[];

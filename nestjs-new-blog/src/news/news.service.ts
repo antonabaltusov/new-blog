@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 import { UsersService } from 'src/users/users.service';
 import { Repository } from 'typeorm';
 import { Comment } from './comments/comments.service';
@@ -32,7 +33,7 @@ export class NewsService {
   constructor(
     @InjectRepository(NewsEntity)
     private newsRepository: Repository<NewsEntity>,
-    private userServise: UsersService,
+    private readonly userServise: UsersService,
   ) {}
 
   async create(news: CreateNewsDto): Promise<NewsEntity> {
@@ -84,16 +85,39 @@ export class NewsService {
     });
   }
 
-  findById(id: number): Promise<NewsEntity> {
-    return this.newsRepository.findOne({ id }, { relations: ['user'] });
+  async findById(id: number): Promise<NewsEntity> {
+    const _news = await this.newsRepository.findOne(
+      { id },
+      { relations: ['user'] },
+    );
+    return _news;
   }
 
-  async remove(id: number): Promise<boolean> {
-    const removeNews = await this.findById(id);
-    if (removeNews) {
-      this.newsRepository.remove(removeNews);
-      return true;
+  async remove(id: number, userId: number): Promise<NewsEntity> {
+    const _news = await this.findById(id);
+    if (!_news) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Комментарий не найден',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
-    return false;
+
+    const _user = await this.userServise.findById(userId);
+    if (
+      _user.id !== _news.user.id &&
+      !checkPermission(Modules.isAdmin, _user.roles)
+    ) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для удаления',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    return this.newsRepository.remove(_news);
   }
 }

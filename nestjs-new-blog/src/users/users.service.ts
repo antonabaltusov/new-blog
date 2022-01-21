@@ -5,6 +5,7 @@ import { UsersEntity } from './users.entity';
 import { hash } from '../utils/crypto';
 import { EditUserDto } from './dtos/edit-user-dto';
 import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
+import { Role } from 'src/auth/role/role.enum';
 
 @Injectable()
 export class UsersService {
@@ -13,14 +14,23 @@ export class UsersService {
     private usersRepository: Repository<UsersEntity>,
   ) {}
 
-  async create(user) {
-    const usersEntity = new UsersEntity();
-    usersEntity.firstName = user.firstName;
-    usersEntity.email = user.email;
-    usersEntity.roles = user.roles;
-    usersEntity.password = await hash(user.password);
-
-    return this.usersRepository.save(usersEntity);
+  async createUser(user) {
+    if (!(await this.findByEmail(user.email))) {
+      const usersEntity = new UsersEntity();
+      usersEntity.firstName = user.firstName;
+      usersEntity.email = user.email;
+      usersEntity.avatar = user.avatar;
+      usersEntity.roles = Role.User;
+      usersEntity.password = await hash(user.password);
+      return await this.usersRepository.save(usersEntity);
+    }
+    throw new HttpException(
+      {
+        status: HttpStatus.CONFLICT,
+        error: 'Этот email уже был зарегистрирован',
+      },
+      HttpStatus.CONFLICT,
+    );
   }
 
   async findById(id: number) {
@@ -36,6 +46,7 @@ export class UsersService {
     if (_user) {
       _user.firstName = user.firstName || _user.firstName;
       _user.email = user.email || _user.email;
+      _user.avatar = user.avatar || _user.avatar;
       if (checkPermission(Modules.isAdmin, _user.roles)) {
         _user.roles = user.roles || _user.roles;
       }

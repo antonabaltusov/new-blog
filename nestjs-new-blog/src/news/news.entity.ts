@@ -30,7 +30,7 @@ export class NewsEntity {
 
   @ManyToOne(() => UsersEntity, (user) => user.news)
   user: UsersEntity;
-  
+
   @OneToMany(() => CommentsEntity, (comments) => comments.news)
   comments: CommentsEntity[];
 

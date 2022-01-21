@@ -6,15 +6,12 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import * as cookie from 'cookie';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Logger, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { WsJwtGuard } from '../../auth/ws-jwt.guard';
 import { CommentsService } from './comments.service';
-import { UsersEntity } from 'src/users/users.entity';
 import { UsersService } from 'src/users/users.service';
-import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 import { EventsComment } from './EventsComment.enum';
 
 export type Comment = { message: string; idNews: number };
@@ -32,7 +29,7 @@ export class SocketCommentsGateway
 
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('addComment')
-  async handleMessage(client: Socket, comment: Comment):Promise<void> {
+  async handleMessage(client: Socket, comment: Comment): Promise<void> {
     const { idNews, message } = comment;
     const userId: number = client.data.user.id;
     const _comment = await this.commentsService.create(idNews, message, userId);
@@ -62,9 +59,8 @@ export class SocketCommentsGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  async handleConnection(client: Socket, ...args: any[]):Promise<void> {
+  async handleConnection(client: Socket, ...args: any[]): Promise<void> {
     const { newsId } = client.handshake.query;
-    // После подключения пользователя к веб-сокету, подключаем его в комнату
     client.join(newsId);
     this.logger.log(`Client connected: ${client.id}`);
   }

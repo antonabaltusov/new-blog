@@ -34,7 +34,7 @@ export class CommentsService {
   constructor(
     @InjectRepository(CommentsEntity)
     private commentsRepository: Repository<CommentsEntity>,
-    private usersService: UsersService,
+    private readonly usersService: UsersService,
     private readonly newsService: NewsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}

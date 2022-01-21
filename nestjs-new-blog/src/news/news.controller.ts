@@ -14,6 +14,8 @@ import {
   ParseIntPipe,
   Query,
   UseGuards,
+  Req,
+  SerializeOptions,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
 import { CommentsService } from './comments/comments.service';
@@ -26,10 +28,12 @@ import { extname } from 'path';
 import { MailService } from 'src/mail/mail.service';
 import { NewsEntity } from './news.entity';
 import { UsersService } from 'src/users/users.service';
-import { LocalAuthGuard } from 'src/auth/local-auth.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Roles } from 'src/auth/role/roles.decorator';
 import { Role } from 'src/auth/role/role.enum';
+import { Request } from 'express';
+import { JwtCookie } from 'src/auth/jwt.decorator';
+import { WsJwtGuard } from 'src/auth/ws-jwt.guard';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
@@ -44,7 +48,7 @@ export class NewsController {
   ) {}
 
   @Get('/all')
-  @Render('news-list')
+  @Render('news/news-list')
   async getAllView(@Query('idUser') idUser: string) {
     if (idUser) {
       const _user = await this.usersService.findById(parseInt(idUser));
@@ -74,22 +78,33 @@ export class NewsController {
     return { news, title: 'Список новостей' };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('edit/news/:id')
-  @Render('edit-news')
-  editView(@Param('id', ParseIntPipe) id: number) {
-    const news = this.newsService.findById(id);
+  @Render('news/edit-news')
+  async editView(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    if (!id === req.user.id) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для удаления',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    const news = await this.newsService.findById(id);
     return { news, title: 'Редактирование новости' };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('create/news')
-  @Render('create-news')
+  @Render('news/create-news')
   createView() {
     return { title: 'создание новости' };
   }
 
   @Get('/detail/:id')
-  @Render('detail-news')
-  async detailView(@Param('id', ParseIntPipe) id: number) {
+  @Render('news/detail-news')
+  async detailView(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
     const news = await this.newsService.findById(id);
     if (!news) {
       throw new HttpException(
@@ -100,8 +115,8 @@ export class NewsController {
         HttpStatus.NOT_FOUND,
       );
     }
-    const comments = this.commentsServise.findById(id);
-    return { news, comments, title: news ? news.title : 'новость отсутствует' };
+
+    return { news, title: news ? news.title : 'новость отсутствует' };
   }
 
   @Get('/api/all')
@@ -111,8 +126,8 @@ export class NewsController {
 
   @Get('/api/:id')
   async get(@Param('id', ParseIntPipe) id: number): Promise<NewsEntity> {
-    const news = await this.newsService.findById(id);
-    if (!news) {
+    const _news = await this.newsService.findById(id);
+    if (!_news) {
       throw new HttpException(
         {
           status: HttpStatus.NOT_FOUND,
@@ -121,7 +136,7 @@ export class NewsController {
         HttpStatus.NOT_FOUND,
       );
     }
-    return news;
+    return _news;
     //const comments = this.commentsServise.find(idInt);
     // if (comments && news) {
     //   return {
@@ -131,8 +146,8 @@ export class NewsController {
     // }
     //return 'новость не найдена';
   }
+
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.Admin, Role.Moderator, Role.User)
   @Post('/api')
   @UseInterceptors(
     FileInterceptor('cover', {
@@ -158,11 +173,12 @@ export class NewsController {
   async create(
     @Body() news: CreateNewsDto,
     @UploadedFile() cover: Express.Multer.File,
+    @Req() req,
   ): Promise<NewsEntity> {
     if (cover?.filename) {
       news.cover = PATH_NEWS + cover.filename;
     }
-    const _user = await this.usersService.findById(parseInt(news.userId));
+    const _user = await this.usersService.findById(req.user.id);
     if (!_user) {
       throw new HttpException(
         {
@@ -172,6 +188,7 @@ export class NewsController {
         HttpStatus.NOT_FOUND,
       );
     }
+    news.userId = req.user.id;
     const createdNews = await this.newsService.create(news);
     // await this.mailService.sendNewNewsForAdmins(
     //   ['sims0204@yandex.ru', 'sims0204@gmail.com'],
@@ -180,25 +197,57 @@ export class NewsController {
     return createdNews;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete('/api/:id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<string> {
-    const isRemove = await this.newsService.remove(id);
-    throw new HttpException(
-      {
-        status: HttpStatus.NOT_FOUND,
-        error: isRemove ? 'новость удалена' : 'Новость была не найдена',
-      },
-      HttpStatus.NOT_FOUND,
-    );
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return await this.newsService.remove(id, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch('/api/:id')
-  @UseInterceptors(FileInterceptor('news'))
+  @UseInterceptors(
+    FileInterceptor('cover', {
+      fileFilter: (req: any, file: any, cb: any) => {
+        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/i)) {
+          cb(null, true);
+        } else {
+          cb(
+            new HttpException(
+              `Unsupported file type ${extname(file.originalname)}`,
+              HttpStatus.BAD_REQUEST,
+            ),
+            false,
+          );
+        }
+      },
+      storage: diskStorage({
+        destination: HelperFileLoader.destinationPath,
+        filename: HelperFileLoader.customFileName,
+      }),
+    }),
+  )
   async edit(
     @Param('id', ParseIntPipe) id: number,
     @Body() news: EditNewsDto,
+    @UploadedFile() cover: Express.Multer.File,
+    @Req() req,
   ): Promise<string> {
+    if (!id === req.user.id) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для удаления',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    if (cover?.filename) {
+      news.cover = PATH_NEWS + cover.filename;
+    }
+
     const answer = await this.newsService.edit(news, id);
+
     if (answer.change) {
       await this.mailService.editNewsForAdmins(
         ['sims0204@yandex.ru', 'sims0204@gmail.com'],

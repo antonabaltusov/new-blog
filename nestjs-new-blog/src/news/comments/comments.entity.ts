@@ -31,5 +31,4 @@ export class CommentsEntity {
 
   @Column({ type: 'boolean', default: false })
   canRemove: boolean;
-
 }

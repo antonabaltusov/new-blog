@@ -16,7 +16,6 @@ export class WsJwtGuard implements CanActivate {
         context.switchToWs().getClient().data.user = user;
         return true;
       }
-
       return false;
     } catch {
       return false;

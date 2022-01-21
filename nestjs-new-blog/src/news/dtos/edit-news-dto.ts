@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, ValidateIf } from 'class-validator';
 
-export class EditNewsDto {  
+export class EditNewsDto {
   @IsString()
   @IsNotEmpty()
   @ValidateIf((o) => o.title)

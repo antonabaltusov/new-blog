@@ -2,18 +2,19 @@
 {{#if news}}
   <form method="patch" action="/news/api" enctype="multipart/form-data">
     <div class="mb-3">
-      <label for="titleInput" class="form-label">Заголовок</label>
+      <label for="titleInput" class="form-label">Заголовок{{news.title}}</label>
       <input class="form-control" name="title" id="titleInput" value="{{news.title}}">
     </div>
     <div class="mb-3">
       <label for="descriptionInput" class="form-label">Описание</label>
       <textarea class="form-control" name="description" id="descriptionInput" rows="3">{{news.description}}</textarea>
     </div>
-    <div class="mb-3">
-      <label for="authorInput" class="form-label">Автор</label>
-      <input class="form-control" name="author" id="authorInput" value="{{news.author}}">
-    </div>
-    <button type="button" class="btn btn-primary" onclick='sendForm({{news.id}})'>отправить</button>
+    <div class="form-group mb-3">
+    <label for="cover">Обложка новости</label>
+    <input type="file" class="form-control-file" id="cover" name="cover">
+  </div>
+    <button type="button" class="btn btn-primary" onclick='sendForm({{news.id}})'>Сохранить</button>
+    <button type="button" class="btn btn-primary" onclick='removeNews({{news.id}})'>Удалить новость</button>
   </form>
 {{else}}
   <h1>Новость отсутствует!</h1>
@@ -23,7 +24,6 @@
 <script>
   function sendForm(id) {
     var data = new FormData($('form')[0]);
-    console.log(data.get('author'));
     $.ajax({
       url: `/news/api/${id}`,
       data: data,
@@ -32,8 +32,20 @@
       processData: false,
       method: 'PATCH',
       success: function() {
-        alert('Новость создана')
-        window.location.href = `/news/${id}/detail`;
+        window.location.href = `/news/detail/${id}`;
+      }
+    });
+  }function removeNews(id) {
+    $.ajax({
+      url: `/news/api/${id}`,
+      method: 'DELETE',
+      success: function() {
+        alert('Новость удалена')
+        window.location.href = `/news/all`;
+      },
+      error: () => {
+        alert('Новость не удалена')
+         window.location.href = `/news/all`;
       }
     });
   }

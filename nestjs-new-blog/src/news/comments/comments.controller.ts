@@ -15,16 +15,28 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Role } from 'src/auth/role/role.enum';
+import { Roles } from 'src/auth/role/roles.decorator';
 import { UsersService } from 'src/users/users.service';
 import { HelperFileLoader } from 'src/utils/HelperFileLoader';
+import { DeleteResult } from 'typeorm';
+import { CommentsEntity } from './comments.entity';
 import { CommentsService } from './comments.service';
-import { CreateCommentDto } from './dtos/create-comment-dto';
-import { EditCommentDto } from './dtos/edit-comment-dto';
+import { CommentDto } from './dtos/comment-dto';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
 
+@ApiBearerAuth()
+@ApiTags('comments')
 @Controller('comments')
 export class CommentsController {
   constructor(
@@ -33,17 +45,36 @@ export class CommentsController {
   ) {}
 
   @Get('/api/:idNews')
-  async getAll(@Param('idNews', ParseIntPipe) idNews: number) {
+  @ApiOperation({ summary: 'получение списка комментариев новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'Список комментариев',
+    type: [CommentsEntity],
+  })
+  async getAll(
+    @Param('idNews', ParseIntPipe) idNews: number,
+  ): Promise<CommentsEntity[]> {
     return await this.commentService.findByNewsId(idNews);
   }
 
-  @Post('/api/:idNews')
   @UseGuards(JwtAuthGuard)
+  @Post('/api/:idNews')
+  @ApiOperation({ summary: 'Создания комментария' })
+  @ApiResponse({
+    status: 200,
+    description: 'комментарий создан',
+    type: CommentsEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Не существует такого автора' })
+  @ApiResponse({ status: 404, description: 'Комментарий был не найден' })
+  @ApiResponse({ status: 404, description: 'Новость была не найдена.' })
+  @ApiBody({ type: CommentDto })
   @UseInterceptors(FileInterceptor('comment'))
   async create(
     @Param('idNews', ParseIntPipe) idNews: number,
-    @Query('idComment') idComment: string,
-    @Body() comment: CreateCommentDto,
+    // @Query('idComment') idComment: string,
+    @Body() comment: CommentDto,
     @Req() req,
   ) {
     const JwtUserId = req.user.id;
@@ -57,48 +88,81 @@ export class CommentsController {
         HttpStatus.NOT_FOUND,
       );
     }
-    if (idComment) {
-      const _comment = await this.commentService.findById(parseInt(idComment));
-      if (!_comment) {
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            error: 'Комментарий была не найдена',
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-    }
+    // if (idComment) {
+    //   const _comment = await this.commentService.findById(parseInt(idComment));
+    //   if (!_comment) {
+    //     throw new HttpException(
+    //       {
+    //         status: HttpStatus.NOT_FOUND,
+    //         error: 'Комментарий был не найден',
+    //       },
+    //       HttpStatus.NOT_FOUND,
+    //     );
+    //   }
+    // }
     return await this.commentService.create(
       idNews,
       comment.message,
       JwtUserId,
-      idComment,
+      // idComment,
     );
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('/api/:idComment')
+  @ApiOperation({ summary: 'Удаление комментария' })
+  @ApiResponse({
+    status: 200,
+    description: 'комментарий удален',
+    type: CommentsEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Недостаточно прав для удаления' })
+  @ApiResponse({ status: 404, description: 'Комментарий не найден' })
   async remove(
     @Param('idComment', ParseIntPipe) idComment: number,
     @Req() req,
-  ) {
+  ): Promise<CommentsEntity> {
     const userId = req.user.id;
     return this.commentService.removeById(idComment, userId);
   }
-
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.Admin)
   @Delete('/api/all/:idNews')
-  removeAllByNewsId(@Param('idNews') idNews: number) {
+  @ApiOperation({ summary: 'Удаление всех комментариев новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'комментарии удалены',
+    type: DeleteResult,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Недостаточно прав для удаления' })
+  removeAllByNewsId(
+    @Param('idNews', ParseIntPipe) idNews: number,
+  ): Promise<DeleteResult> {
     return this.commentService.removeAllByNewsId(idNews);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch('/api/:idComment')
+  @ApiOperation({ summary: 'Редактирование комментария' })
+  @ApiResponse({
+    status: 200,
+    description: 'комментарий редактирован',
+    type: CommentsEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Недостаточно прав для редактирования',
+  })
+  @ApiResponse({ status: 404, description: 'Комментарий не найден' })
+  @ApiBody({ type: CommentDto })
   async edit(
     @Req() req,
     @Param('idComment', ParseIntPipe) idComment: number,
-    @Body() { message }: EditCommentDto,
-  ) {
+    @Body() { message }: CommentDto,
+  ): Promise<CommentsEntity> {
     return await this.commentService.edit(idComment, message, req.user.id);
   }
 }

@@ -13,6 +13,7 @@ import { WsJwtGuard } from '../../auth/ws-jwt.guard';
 import { CommentsService } from './comments.service';
 import { UsersService } from 'src/users/users.service';
 import { EventsComment } from './EventsComment.enum';
+import { EventsNews } from '../EventsNews.enum';
 
 export type Comment = { message: string; idNews: number };
 
@@ -48,6 +49,21 @@ export class SocketCommentsGateway
     this.server.to(idNews.toString()).emit('editComment', {
       commentId: idComment,
       commentMessage: commentMessage,
+    });
+  }
+  
+  @OnEvent(EventsNews.remove)
+  handleRemoveNewsEvent(payload) {
+    const { idNews } = payload;
+    this.server.to(idNews.toString()).emit('removeNews');
+  }
+
+  @OnEvent(EventsNews.edit)
+  async handleEditNewsEvent(payload) {
+    const { idNews, news } = payload;
+    console.log(news);
+    this.server.to(idNews.toString()).emit('editNews', {
+      news: news,
     });
   }
 

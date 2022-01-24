@@ -1,24 +1,39 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
-import { Role } from '../../auth/role/role.enum';
 
 export class CreateUserDto {
+  @ApiProperty({
+    example: 'Антон',
+    description: 'Имя пользователя',
+    required: true,
+  })
   @IsNotEmpty()
   @IsString()
   firstName: string;
 
+  @ApiProperty({
+    example: 'example@example.com',
+    description: 'Почта пользователя',
+    required: true,
+  })
   @IsNotEmpty()
   @IsEmail()
   email: string;
 
+  @ApiProperty({
+    example: '2hk_H.Gk45-j',
+    description: 'Пароль пользователя',
+    required: true,
+  })
   @IsNotEmpty()
   @IsString()
   password: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @ValidateIf((o) => o.roles)
-  roles: Role;
-
+  @ApiProperty({
+    type: 'file',
+    description: 'Аватар пользователя',
+    required: false,
+  })
   @ValidateIf((o) => o !== undefined)
   avatar: string;
 }

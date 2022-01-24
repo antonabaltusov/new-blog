@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from '../../users/users.service';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { NewsService } from '../news.service';
 import { CommentsEntity } from './comments.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -76,7 +76,7 @@ export class CommentsService {
     return this.commentsRepository.findOne(id);
   }
 
-  async findByNewsId(idNews: number): Promise<any> {
+  async findByNewsId(idNews: number): Promise<CommentsEntity[]> {
     return await this.commentsRepository.find({
       where: { news: { id: idNews } },
       relations: ['user'],
@@ -121,7 +121,7 @@ export class CommentsService {
     return comment;
   }
 
-  removeAllByNewsId(idNews: number) {
+  removeAllByNewsId(idNews: number): Promise<DeleteResult> {
     return this.commentsRepository.delete({ news: { id: idNews } });
   }
 

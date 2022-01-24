@@ -14,7 +14,7 @@ export class UsersService {
     private usersRepository: Repository<UsersEntity>,
   ) {}
 
-  async createUser(user) {
+  async createUser(user): Promise<UsersEntity> {
     if (!(await this.findByEmail(user.email))) {
       const usersEntity = new UsersEntity();
       usersEntity.firstName = user.firstName;
@@ -41,19 +41,15 @@ export class UsersService {
     return await this.usersRepository.findOne({ email });
   }
 
-  async edit(user: EditUserDto, id: number) {
+  async edit(user: EditUserDto, id: number): Promise<UsersEntity> {
     const _user = await this.findById(id);
     if (_user) {
       _user.firstName = user.firstName || _user.firstName;
       _user.email = user.email || _user.email;
       _user.avatar = user.avatar || _user.avatar;
-      if (checkPermission(Modules.isAdmin, _user.roles)) {
-        _user.roles = user.roles || _user.roles;
-      }
       _user.password = (await hash(user.password)) || _user.password;
 
       await this.usersRepository.save(_user);
-      return true;
     }
     throw new HttpException(
       {

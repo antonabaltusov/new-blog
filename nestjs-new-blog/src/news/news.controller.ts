@@ -15,9 +15,17 @@ import {
   Query,
   UseGuards,
   Req,
-  SerializeOptions,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CommentsService } from './comments/comments.service';
 import { CreateNewsDto } from './dtos/create-news-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -29,15 +37,14 @@ import { MailService } from 'src/mail/mail.service';
 import { NewsEntity } from './news.entity';
 import { UsersService } from 'src/users/users.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { Roles } from 'src/auth/role/roles.decorator';
-import { Role } from 'src/auth/role/role.enum';
 import { Request } from 'express';
-import { JwtCookie } from 'src/auth/jwt.decorator';
-import { WsJwtGuard } from 'src/auth/ws-jwt.guard';
+import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
 
+@ApiBearerAuth()
+@ApiTags('news')
 @Controller('news')
 export class NewsController {
   constructor(
@@ -48,10 +55,20 @@ export class NewsController {
   ) {}
 
   @Get('/all')
+  @ApiOperation({
+    summary:
+      'Страница всех новостей, с возможностью фильтра по id пользователя',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Рендер списка новостей',
+  })
+  @ApiQuery({ name: 'idUser', type: Number, required: false })
   @Render('news/news-list')
   async getAllView(@Query('idUser') idUser: string) {
     if (idUser) {
-      const _user = await this.usersService.findById(parseInt(idUser));
+      const idUserInt = parseInt(idUser);
+      const _user = await this.usersService.findById(idUserInt);
       if (!_user) {
         throw new HttpException(
           {
@@ -61,7 +78,7 @@ export class NewsController {
           HttpStatus.NOT_FOUND,
         );
       }
-      const idUserInt = parseInt(idUser);
+
       const news = await this.newsService.findByUserId(idUserInt);
       if (news) {
         return { news, title: `Список новостей автора ${_user.firstName}` };
@@ -80,29 +97,50 @@ export class NewsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('edit/news/:id')
+  @ApiOperation({ summary: 'Страница редактирования новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'Рендер страницы редактирования новости',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Недостаточно прав для редактирования.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @Render('news/edit-news')
   async editView(@Param('id', ParseIntPipe) id: number, @Req() req) {
-    if (!id === req.user.id) {
+    const news = await this.newsService.findById(id);
+    if (news.user.id !== req.user.id) {
       throw new HttpException(
         {
           status: HttpStatus.FORBIDDEN,
-          error: 'Недостаточно прав для удаления',
+          error: 'Недостаточно прав для редактирования',
         },
         HttpStatus.FORBIDDEN,
       );
     }
-    const news = await this.newsService.findById(id);
     return { news, title: 'Редактирование новости' };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('create/news')
+  @ApiOperation({ summary: 'Страница создания новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'Рендер страницы создания новости',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @Render('news/create-news')
   createView() {
     return { title: 'создание новости' };
   }
 
   @Get('/detail/:id')
+  @ApiOperation({ summary: 'Детальная страница новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'Рендер детальной страницы новости',
+  })
   @Render('news/detail-news')
   async detailView(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
     const news = await this.newsService.findById(id);
@@ -120,11 +158,24 @@ export class NewsController {
   }
 
   @Get('/api/all')
+  @ApiOperation({ summary: 'получение списка новостей' })
+  @ApiResponse({
+    status: 200,
+    description: 'Список новостей',
+    type: [NewsEntity],
+  })
   async getAll(): Promise<NewsEntity[]> {
     return this.newsService.getAll();
   }
 
   @Get('/api/:id')
+  @ApiOperation({ summary: 'Получение новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'новость',
+    type: NewsEntity,
+  })
+  @ApiResponse({ status: 404, description: 'Новость была не найдена.' })
   async get(@Param('id', ParseIntPipe) id: number): Promise<NewsEntity> {
     const _news = await this.newsService.findById(id);
     if (!_news) {
@@ -137,18 +188,21 @@ export class NewsController {
       );
     }
     return _news;
-    //const comments = this.commentsServise.find(idInt);
-    // if (comments && news) {
-    //   return {
-    //     ...news,
-    //     comments,
-    //   };
-    // }
-    //return 'новость не найдена';
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('/api')
+  @ApiOperation({ summary: 'Создание новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'Новость успешно создалась',
+    type: NewsEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Не существует такого автора.' })
+  @ApiResponse({ status: 400, description: 'Unsupported file type ...' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateNewsDto })
   @UseInterceptors(
     FileInterceptor('cover', {
       fileFilter: (req: any, file: any, cb: any) => {
@@ -188,23 +242,59 @@ export class NewsController {
         HttpStatus.NOT_FOUND,
       );
     }
-    news.userId = req.user.id;
-    const createdNews = await this.newsService.create(news);
-    // await this.mailService.sendNewNewsForAdmins(
-    //   ['sims0204@yandex.ru', 'sims0204@gmail.com'],
-    //   createdNews,
-    // );
+
+    const createdNews = await this.newsService.create(news, req.user.id);
+    await this.mailService.sendNewNewsForAdmins(
+      ['sims0204@yandex.ru', 'sims0204@gmail.com'],
+      createdNews,
+    );
     return createdNews;
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('/api/:id')
+  @ApiOperation({ summary: 'Удаление новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'новость удалена',
+  })
+  @ApiResponse({ status: 403, description: 'Недостаточно прав для удаления' })
+  @ApiResponse({ status: 404, description: 'новость не найдена' })
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req) {
-    return await this.newsService.remove(id, req.user.id);
+    const _user = await this.usersService.findById(req.user.id);
+    const _news = await this.newsService.findById(id);
+
+    if (
+      _user.id !== _news.user.id &&
+      !checkPermission(Modules.isAdmin, _user.roles)
+    ) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для удаления',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    await this.commentsServise.removeAllByNewsId(id);
+    return await this.newsService.remove(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch('/api/:id')
+  @ApiOperation({ summary: 'Редактирование новости' })
+  @ApiResponse({
+    status: 200,
+    description: 'новость изменена',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Недостаточно прав для редактирования',
+  })
+  @ApiResponse({ status: 404, description: 'новость не найдена' })
+  @ApiResponse({ status: 400, description: 'Unsupported file type ...' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: EditNewsDto })
   @UseInterceptors(
     FileInterceptor('cover', {
       fileFilter: (req: any, file: any, cb: any) => {
@@ -231,38 +321,18 @@ export class NewsController {
     @Body() news: EditNewsDto,
     @UploadedFile() cover: Express.Multer.File,
     @Req() req,
-  ): Promise<string> {
-    if (!id === req.user.id) {
-      throw new HttpException(
-        {
-          status: HttpStatus.FORBIDDEN,
-          error: 'Недостаточно прав для удаления',
-        },
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
+  ): Promise<NewsEntity> {
     if (cover?.filename) {
       news.cover = PATH_NEWS + cover.filename;
     }
 
-    const answer = await this.newsService.edit(news, id);
+    const answer = await this.newsService.edit(news, id, req.user.id);
 
-    if (answer.change) {
-      await this.mailService.editNewsForAdmins(
-        ['sims0204@yandex.ru', 'sims0204@gmail.com'],
-        answer.news,
-        answer.filterNewNews,
-      );
-      return 'Новость изменена';
-    } else {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'Новость была не найдена',
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    await this.mailService.editNewsForAdmins(
+      ['sims0204@yandex.ru', 'sims0204@gmail.com'],
+      answer.news,
+      answer.filterNewNews,
+    );
+    return answer.news;
   }
 }

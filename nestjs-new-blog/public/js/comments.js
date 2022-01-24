@@ -53,8 +53,14 @@ class Comments extends React.Component {
       this.setState({ comments });
     });
 
-    this.socket.on('editNews', (news) => {
+    this.socket.on('editNews', (payload) => {
+      const { news } = payload;
       this.setState({ news });
+    });
+
+    this.socket.on('removeNews', () => {
+      alert('новость была удалена');
+      window.location.href = `/news/all`;
     });
   }
 
@@ -123,9 +129,9 @@ class Comments extends React.Component {
       },
     );
 
-    if (response.ok) {
-      alert('Новость удалена');
-      window.location.href = `/news/all`;
+    if (!response.ok) {
+      alert('Новость не удалена');
+      window.location.reload();
     }
   };
 

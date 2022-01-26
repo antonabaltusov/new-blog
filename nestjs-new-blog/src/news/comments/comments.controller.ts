@@ -22,11 +22,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { Role } from 'src/auth/role/role.enum';
-import { Roles } from 'src/auth/role/roles.decorator';
-import { UsersService } from 'src/users/users.service';
-import { HelperFileLoader } from 'src/utils/HelperFileLoader';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { Role } from '../../auth/role/role.enum';
+import { Roles } from '../../auth/role/roles.decorator';
+import { UsersService } from '../../users/users.service';
+import { HelperFileLoader } from '../../utils/HelperFileLoader';
 import { DeleteResult } from 'typeorm';
 import { CommentsEntity } from './comments.entity';
 import { CommentsService } from './comments.service';
@@ -126,6 +126,7 @@ export class CommentsController {
     const userId = req.user.id;
     return this.commentService.removeById(idComment, userId);
   }
+
   @UseGuards(JwtAuthGuard)
   @Roles(Role.Admin)
   @Delete('/api/all/:idNews')
@@ -133,13 +134,13 @@ export class CommentsController {
   @ApiResponse({
     status: 200,
     description: 'комментарии удалены',
-    type: DeleteResult,
+    type: [CommentsEntity],
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Недостаточно прав для удаления' })
   removeAllByNewsId(
     @Param('idNews', ParseIntPipe) idNews: number,
-  ): Promise<DeleteResult> {
+  ): Promise<CommentsEntity[]> {
     return this.commentService.removeAllByNewsId(idNews);
   }
 

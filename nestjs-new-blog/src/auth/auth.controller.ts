@@ -38,7 +38,7 @@ export class AuthController {
     type: 'string',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async login(@Request() req, @Res({ passthrough: true }) response: Response) {
+  async login(@Request() req, @Res({ passthrough: true }) response) {
     console.log('login');
     const { access_token, id, role } = await this.authService.login(req.user);
     response.cookie('jwt', access_token, { httpOnly: true });
@@ -46,5 +46,4 @@ export class AuthController {
     response.cookie('userRole', role);
     return access_token;
   }
-
 }

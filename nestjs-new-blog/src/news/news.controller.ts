@@ -30,15 +30,15 @@ import { CommentsService } from './comments/comments.service';
 import { CreateNewsDto } from './dtos/create-news-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { HelperFileLoader } from 'src/utils/HelperFileLoader';
+import { HelperFileLoader } from '../utils/HelperFileLoader';
 import { EditNewsDto } from './dtos/edit-news-dto';
 import { extname } from 'path';
-import { MailService } from 'src/mail/mail.service';
+import { MailService } from '../mail/mail.service';
 import { NewsEntity } from './news.entity';
-import { UsersService } from 'src/users/users.service';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { UsersService } from '../users/users.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Request } from 'express';
-import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
+import { checkPermission, Modules } from '../auth/role/unit/check-permission';
 
 const PATH_NEWS = '/news-static/';
 HelperFileLoader.path = PATH_NEWS;
@@ -65,7 +65,7 @@ export class NewsController {
   })
   @ApiQuery({ name: 'idUser', type: Number, required: false })
   @Render('news/news-list')
-  async getAllView(@Query('idUser') idUser: string) {
+  async getAllView(@Query('idUser') idUser?: string) {
     if (idUser) {
       const idUserInt = parseInt(idUser);
       const _user = await this.usersService.findById(idUserInt);
@@ -79,20 +79,20 @@ export class NewsController {
         );
       }
 
-      const news = await this.newsService.findByUserId(idUserInt);
-      if (news) {
-        return { news, title: `Список новостей автора ${_user.firstName}` };
+      const _news = await this.newsService.findByUserId(idUserInt);
+      if (!_news) {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'Новости были не найдены',
+          },
+          HttpStatus.NOT_FOUND,
+        );
       }
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'Новости были не найдены',
-        },
-        HttpStatus.NOT_FOUND,
-      );
+      return { _news, title: `Список новостей автора ${_user.firstName}` };
     }
-    const news = await this.newsService.getAll();
-    return { news, title: 'Список новостей' };
+    const _news = await this.newsService.getAll();
+    return { _news, title: 'Список новостей' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -109,8 +109,8 @@ export class NewsController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @Render('news/edit-news')
   async editView(@Param('id', ParseIntPipe) id: number, @Req() req) {
-    const news = await this.newsService.findById(id);
-    if (news.user.id !== req.user.id) {
+    const _news = await this.newsService.findById(id);
+    if (_news.user.id !== req.user.id) {
       throw new HttpException(
         {
           status: HttpStatus.FORBIDDEN,
@@ -119,7 +119,7 @@ export class NewsController {
         HttpStatus.FORBIDDEN,
       );
     }
-    return { news, title: 'Редактирование новости' };
+    return { _news, title: 'Редактирование новости' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -142,9 +142,9 @@ export class NewsController {
     description: 'Рендер детальной страницы новости',
   })
   @Render('news/detail-news')
-  async detailView(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
-    const news = await this.newsService.findById(id);
-    if (!news) {
+  async detailView(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    const _news = await this.newsService.findById(id);
+    if (!_news) {
       throw new HttpException(
         {
           status: HttpStatus.NOT_FOUND,
@@ -154,7 +154,7 @@ export class NewsController {
       );
     }
 
-    return { news, title: news ? news.title : 'новость отсутствует' };
+    return { _news, title: _news?.title ? _news.title : 'новость отсутствует' };
   }
 
   @Get('/api/all')
@@ -226,8 +226,8 @@ export class NewsController {
   )
   async create(
     @Body() news: CreateNewsDto,
-    @UploadedFile() cover: Express.Multer.File,
     @Req() req,
+    @UploadedFile() cover?: Express.Multer.File,
   ): Promise<NewsEntity> {
     if (cover?.filename) {
       news.cover = PATH_NEWS + cover.filename;
@@ -319,8 +319,8 @@ export class NewsController {
   async edit(
     @Param('id', ParseIntPipe) id: number,
     @Body() news: EditNewsDto,
-    @UploadedFile() cover: Express.Multer.File,
     @Req() req,
+    @UploadedFile() cover?: Express.Multer.File,
   ): Promise<NewsEntity> {
     if (cover?.filename) {
       news.cover = PATH_NEWS + cover.filename;

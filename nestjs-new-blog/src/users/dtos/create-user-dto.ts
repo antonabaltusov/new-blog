@@ -34,6 +34,6 @@ export class CreateUserDto {
     description: 'Аватар пользователя',
     required: false,
   })
-  @ValidateIf((o) => o !== undefined)
+  
   avatar: string;
 }

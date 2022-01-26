@@ -23,9 +23,9 @@ import {
 } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
-import { HelperFileLoader } from 'src/utils/HelperFileLoader';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { checkPermission, Modules } from '../auth/role/unit/check-permission';
+import { HelperFileLoader } from '../utils/HelperFileLoader';
 import { CreateUserDto } from './dtos/create-user-dto';
 import { EditUserDto } from './dtos/edit-user-dto';
 import { UsersEntity } from './users.entity';
@@ -76,6 +76,10 @@ export class UsersController {
     type: UsersEntity,
   })
   @ApiResponse({ status: 400, description: 'Unsupported file type ...' })
+  @ApiResponse({
+    status: 409,
+    description: 'Этот email уже был зарегистрирован',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateUserDto })
   @UseInterceptors(
@@ -101,7 +105,7 @@ export class UsersController {
   )
   async createUser(
     @Body() user: CreateUserDto,
-    @UploadedFile() avatar: Express.Multer.File,
+    @UploadedFile() avatar?: Express.Multer.File,
   ): Promise<UsersEntity> {
     if (avatar?.filename) {
       user.avatar = PATH_NEWS + avatar.filename;
@@ -145,7 +149,7 @@ export class UsersController {
   async edit(
     @Req() req,
     @Body() editUser: EditUserDto,
-    @UploadedFile() avatar: Express.Multer.File,
+    @UploadedFile() avatar?: Express.Multer.File,
   ): Promise<UsersEntity> {
     if (avatar?.filename) {
       editUser.avatar = PATH_NEWS + avatar.filename;

@@ -1,5 +1,5 @@
 import { IsEnum } from 'class-validator';
-import { CommentsEntity } from 'src/news/comments/comments.entity';
+import { CommentsEntity } from '../news/comments/comments.entity';
 import {
   Entity,
   Column,
@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { NewsEntity } from '../news/news.entity';
 import { Role } from '../auth/role/role.enum';
-import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 //import { CommentsEntity } from '../news/comments/comments.entity';
 

@@ -1,8 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
-import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 import { Repository } from 'typeorm';
 import { Comment } from './comments/comments.service';
 import { CreateNewsDto } from './dtos/create-news-dto';
@@ -49,10 +48,10 @@ export class NewsService {
     return await this.newsRepository.save(newsEntity);
   }
 
-  async edit(newNews: EditNewsDto, id: number, idNew: number) {
-    let _editableNews = await this.findById(id);
+  async edit(newNews: EditNewsDto, id: number, idUser: number) {
+    const _editableNews = await this.findById(id);
 
-    if (_editableNews.user.id !== idNew) {
+    if (_editableNews.user.id !== idUser) {
       throw new HttpException(
         {
           status: HttpStatus.FORBIDDEN,
@@ -94,7 +93,7 @@ export class NewsService {
   filter(oldNews, newNews) {
     const filtredNewNews = {};
     for (const key in newNews) {
-      if (newNews[key] !== oldNews[key]) {
+      if (newNews[key] !== oldNews[key] && !!newNews[key]) {
         filtredNewNews[key] = true;
       }
     }
@@ -113,17 +112,14 @@ export class NewsService {
   }
 
   async findById(id: number): Promise<NewsEntity> {
-    const _news = await this.newsRepository.findOne(
-      { id },
-      { relations: ['user'] },
-    );
+    const _news = await this.newsRepository.findOne(id, {
+      relations: ['user'],
+    });
     return _news;
   }
 
   async remove(id: number): Promise<NewsEntity> {
     const _news = await this.findById(id);
-    console.log(_news);
-    
     if (!_news) {
       throw new HttpException(
         {

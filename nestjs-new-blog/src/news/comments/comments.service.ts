@@ -5,8 +5,10 @@ import { DeleteResult, Repository } from 'typeorm';
 import { NewsService } from '../news.service';
 import { CommentsEntity } from './comments.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
-import { UsersEntity } from 'src/users/users.entity';
+import {
+  checkPermission,
+  Modules,
+} from '../../auth/role/unit/check-permission';
 import { EventsComment } from './EventsComment.enum';
 
 export type Comment = {
@@ -17,17 +19,6 @@ export type Comment = {
   reply?: Comment[];
   blockcomment?: boolean;
 };
-
-export type EditComment = {
-  message?: string;
-  author?: string;
-};
-
-export function getRandomInt(min = 1, max = 99999): number {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 @Injectable()
 export class CommentsService {
@@ -44,7 +35,7 @@ export class CommentsService {
     message: string,
     idUser: number,
     idComment?: string,
-  ) {
+  ): Promise<CommentsEntity> {
     const _news = await this.newsService.findById(idNews);
     if (!_news) {
       throw new HttpException(
@@ -83,9 +74,8 @@ export class CommentsService {
     });
   }
 
-  async removeById(idComment: number, userId: number): Promise<CommentsEntity> {
-    const _comment = await this.commentsRepository.findOne({
-      where: { id: idComment },
+  async removeById(id: number, userId: number): Promise<CommentsEntity> {
+    const _comment = await this.commentsRepository.findOne(id, {
       relations: ['user', 'news'],
     });
     if (!_comment) {
@@ -114,24 +104,26 @@ export class CommentsService {
     }
     const comment = await this.commentsRepository.remove(_comment);
     this.eventEmitter.emit(EventsComment.remove, {
-      idComment: idComment,
+      idComment: id,
       idNews: _comment.news.id,
     });
 
     return comment;
   }
 
-  removeAllByNewsId(idNews: number): Promise<DeleteResult> {
-    return this.commentsRepository.delete({ news: { id: idNews } });
+  async removeAllByNewsId(idNews: number): Promise<CommentsEntity[]> {
+    const comments = await this.commentsRepository.find({
+      where: { news: { id: idNews } },
+    });
+    return await this.commentsRepository.remove(comments);
   }
 
   async edit(
-    idComment: number,
+    id: number,
     message: string,
     idUser: number,
   ): Promise<CommentsEntity> {
-    const _comment = await this.commentsRepository.findOne({
-      where: { id: idComment },
+    const _comment = await this.commentsRepository.findOne(id, {
       relations: ['user', 'news'],
     });
 
@@ -158,7 +150,7 @@ export class CommentsService {
     _comment.message = message;
     const comment = await this.commentsRepository.save(_comment);
     this.eventEmitter.emit(EventsComment.edit, {
-      idComment: idComment,
+      idComment: id,
       idNews: _comment.news.id,
       commentMessage: message,
     });

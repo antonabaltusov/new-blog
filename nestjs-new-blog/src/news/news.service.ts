@@ -50,6 +50,15 @@ export class NewsService {
 
   async edit(newNews: EditNewsDto, id: number, idUser: number) {
     const _editableNews = await this.findById(id);
+    if (!_editableNews) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Новость не найдена',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
     if (_editableNews.user.id !== idUser) {
       throw new HttpException(
@@ -62,15 +71,6 @@ export class NewsService {
     }
 
     const filtredNewNews = this.filter(_editableNews, newNews);
-    if (!_editableNews) {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'новость не найдена',
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
 
     _editableNews.title = newNews.title || _editableNews.title;
     _editableNews.description =
@@ -115,20 +115,20 @@ export class NewsService {
     const _news = await this.newsRepository.findOne(id, {
       relations: ['user'],
     });
+    if (!_news) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Новость не найдена',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
     return _news;
   }
 
   async remove(id: number): Promise<NewsEntity> {
     const _news = await this.findById(id);
-    if (!_news) {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'новость не найдена',
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
 
     const news = await this.newsRepository.remove(_news);
     this.eventEmitter.emit(EventsNews.remove, {

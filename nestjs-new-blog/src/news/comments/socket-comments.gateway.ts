@@ -11,7 +11,7 @@ import { Logger, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { WsJwtGuard } from '../../auth/ws-jwt.guard';
 import { CommentsService } from './comments.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../../users/users.service';
 import { EventsComment } from './EventsComment.enum';
 import { EventsNews } from '../EventsNews.enum';
 

@@ -259,13 +259,12 @@ export class NewsController {
     description: 'новость удалена',
   })
   @ApiResponse({ status: 403, description: 'Недостаточно прав для удаления' })
-  @ApiResponse({ status: 404, description: 'новость не найдена' })
+  @ApiResponse({ status: 404, description: 'Новость не найдена' })
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req) {
     const _user = await this.usersService.findById(req.user.id);
     const _news = await this.newsService.findById(id);
-
     if (
-      _user.id !== _news.user.id &&
+      _user.id !== _news?.user.id &&
       !checkPermission(Modules.isAdmin, _user.roles)
     ) {
       throw new HttpException(
@@ -291,7 +290,7 @@ export class NewsController {
     status: 403,
     description: 'Недостаточно прав для редактирования',
   })
-  @ApiResponse({ status: 404, description: 'новость не найдена' })
+  @ApiResponse({ status: 404, description: 'Новость не найдена' })
   @ApiResponse({ status: 400, description: 'Unsupported file type ...' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: EditNewsDto })

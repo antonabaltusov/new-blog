@@ -1,0 +1,42 @@
+<h1>Регистрация</h1>
+  <form>
+    <div class="mb-3">
+      <label for="firstNameInput" class="form-label">firstName</label>
+      <input required class="form-control" name="firstName" id="firstNameInput">
+    </div>
+    <div class="mb-3">
+      <label for="emailInput" class="form-label">email</label>
+      <input required class="form-control" name="email" id="emailInput">
+    </div>
+    <div class="mb-3">
+      <label for="passwordInput" class="form-label">password</label>
+      <input required class="form-control" name="password" id="passwordInput">
+    </div>
+    <div class="mb-3">
+      <label for="avatar">Аватар</label>
+      <input type="file" class="form-control-file" id="avatar" name="avatar">
+    </div>
+    <button type="button" class="btn btn-primary" onclick='sendForm()'>Регистрация</button>
+  </form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  function sendForm(id) {
+    var data = new FormData($('form')[0]);
+    $.ajax({
+      url: `/users/api/`,
+      data: data,
+      cache: false,
+      contentType: false,
+      processData: false,
+      method: 'POST',
+      success: function() {
+        alert('успешно')
+        window.location.href = `/auth/login`;
+      },
+      error: function(error) {
+        alert(error.responseJSON.error);
+      }
+    });
+  }
+</script>

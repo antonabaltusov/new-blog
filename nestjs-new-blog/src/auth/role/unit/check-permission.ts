@@ -2,7 +2,7 @@ import { Role } from '../role.enum';
 
 export enum Modules {
   isAdmin = 'isAdmin',
-  removeCommit = 'removeCommit'
+  editComment = 'removeCommit',
 }
 
 export const checkPermission = (module: Modules, role: Role) => {
@@ -10,11 +10,8 @@ export const checkPermission = (module: Modules, role: Role) => {
     case Modules.isAdmin:
       return [Role.Admin].includes(role);
       break;
-    case Modules.removeCommit:
-      if ([Role.Admin].includes(role)) {
-        return Role.Admin;
-      } else if ([Role.User].includes(role)) {
-        return Role.User;
-        }
+    case Modules.editComment:
+      return [Role.Admin].includes(role);
+      break;
   }
 };

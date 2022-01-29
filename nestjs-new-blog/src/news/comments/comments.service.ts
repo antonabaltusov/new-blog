@@ -1,12 +1,15 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from '../../users/users.service';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { NewsService } from '../news.service';
 import { CommentsEntity } from './comments.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { checkPermission, Modules } from 'src/auth/role/unit/check-permission';
-import { UsersEntity } from 'src/users/users.entity';
+import {
+  checkPermission,
+  Modules,
+} from '../../auth/role/unit/check-permission';
+import { EventsComment } from './EventsComment.enum';
 
 export type Comment = {
   id?: number;
@@ -17,23 +20,12 @@ export type Comment = {
   blockcomment?: boolean;
 };
 
-export type EditComment = {
-  message?: string;
-  author?: string;
-};
-
-export function getRandomInt(min = 1, max = 99999): number {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 @Injectable()
 export class CommentsService {
   constructor(
     @InjectRepository(CommentsEntity)
     private commentsRepository: Repository<CommentsEntity>,
-    private usersService: UsersService,
+    private readonly usersService: UsersService,
     private readonly newsService: NewsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -43,7 +35,7 @@ export class CommentsService {
     message: string,
     idUser: number,
     idComment?: string,
-  ) {
+  ): Promise<CommentsEntity> {
     const _news = await this.newsService.findById(idNews);
     if (!_news) {
       throw new HttpException(
@@ -75,65 +67,93 @@ export class CommentsService {
     return this.commentsRepository.findOne(id);
   }
 
-  async findByNewsId(idNews: number): Promise<any> {
+  async findByNewsId(idNews: number): Promise<CommentsEntity[]> {
     return await this.commentsRepository.find({
       where: { news: { id: idNews } },
       relations: ['user'],
     });
   }
 
-  async removeById(idComment: number): Promise<boolean> {
-    const _comment = await this.commentsRepository.findOne({
-      where: { id: idComment },
-      relations: ['news'],
+  async removeById(id: number, userId: number): Promise<CommentsEntity> {
+    const _comment = await this.commentsRepository.findOne(id, {
+      relations: ['user', 'news'],
     });
-    if (_comment) {
-      this.commentsRepository.remove(_comment);
-      this.eventEmitter.emit('comment.remove', {
-        commentId: idComment,
-        newsId: _comment.news.id,
-      });
-      return true;
+    if (!_comment) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Комментарий не найден',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
-    return false;
+
+    const _user = await this.usersService.findById(userId);
+
+    if (
+      _user.id !== _comment.user.id &&
+      !checkPermission(Modules.editComment, _user.roles)
+    ) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для удаления',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    const comment = await this.commentsRepository.remove(_comment);
+    this.eventEmitter.emit(EventsComment.remove, {
+      idComment: id,
+      idNews: _comment.news.id,
+    });
+
+    return comment;
   }
 
-  async removeByIdRole(idComment: number, userId: number): Promise<boolean> {
-    const _comment = await this.commentsRepository.findOne({
-      where: { id: idComment },
-      relations: ['user'],
+  async removeAllByNewsId(idNews: number): Promise<CommentsEntity[]> {
+    const comments = await this.commentsRepository.find({
+      where: { news: { id: idNews } },
     });
-    if (_comment) {
-      const _user: UsersEntity = await this.usersService.findById(userId);
-      if (
-        checkPermission(Modules.isAdmin, _user.roles) ||
-        _user.roles === _comment.user.roles
-      ) {
-        this.commentsRepository.remove(_comment);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  removeAllByNewsId(idNews: number) {
-    return this.commentsRepository.delete({ news: { id: idNews } });
+    return await this.commentsRepository.remove(comments);
   }
 
   async edit(
-    idComment: number,
+    id: number,
     message: string,
     idUser: number,
-  ): Promise<boolean> {
-    const _сomment = await this.commentsRepository.findOne({
-      where: { id: idComment },
-      relations: ['user'],
+  ): Promise<CommentsEntity> {
+    const _comment = await this.commentsRepository.findOne(id, {
+      relations: ['user', 'news'],
     });
-    if (_сomment && _сomment.user.id === idUser) {
-      _сomment.message = message;
-      await this.commentsRepository.update(_сomment.id, _сomment);
-      return true;
+
+    if (!_comment) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Комментарий не найден',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
-    return false;
+
+    if (idUser !== _comment.user.id) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Недостаточно прав для редактирования',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    _comment.message = message;
+    const comment = await this.commentsRepository.save(_comment);
+    this.eventEmitter.emit(EventsComment.edit, {
+      idComment: id,
+      idNews: _comment.news.id,
+      commentMessage: message,
+    });
+    return comment;
   }
 }

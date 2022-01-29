@@ -8,37 +8,79 @@ import {
   Patch,
 } from '@nestjs/common';
 import { EditNews, News, NewsService } from './news.service';
+import { CommentsService } from './comments/comments.service';
+import { renderNewsAll } from '../views/news/news-all';
+import { renderTemlate } from '../views/template';
+import { renderNewsBlock } from 'src/views/news/news';
+import { renderComments } from 'src/views/news/comments';
 
 @Controller('news')
 export class NewsController {
-  constructor(private readonly newsService: NewsService) {}
+  constructor(
+    private readonly newsService: NewsService,
+    private readonly commentsServise: CommentsService,
+  ) {}
 
-  @Get('all')
+  @Get('/all')
+  getAllView() {
+    const news = this.newsService.getAll();
+    const content = renderNewsAll(news);
+    return renderTemlate(content, {
+      title: 'список новостей',
+      description: 'самые крутые новости',
+    });
+  }
+
+  @Get('/:id/detail')
+  getOneView(@Param('id') id: string) {
+    const idInt = parseInt(id);
+    const news = this.newsService.find(idInt);
+    const comments = this.commentsServise.find(idInt);
+    const isComments = comments ? true : false;
+    if (comments && news) {
+      const content = renderNewsBlock(news, isComments) + renderComments(comments);
+      return renderTemlate(content, {
+        title: 'Новость года',
+        description: 'кратко и многом',
+      });
+    }
+  }
+
+  @Get('/api/all')
   getAll(): News[] {
     return this.newsService.getAll();
   }
 
-  @Get('/:id')
-  get(@Param('id') id: string): News {
+  @Get('/api/:id')
+  get(@Param('id') id: string): News | string {
     const idInt = parseInt(id);
-    return this.newsService.find(idInt);
+    const news = this.newsService.find(idInt);
+    const comments = this.commentsServise.find(idInt);
+    if (comments && news) {
+      return {
+        ...news,
+        comments,
+      };
+    }
+    return 'новости не найдены';
   }
 
-  @Post()
+  @Post('/api')
   create(@Body() news: News): News {
     return this.newsService.create(news);
   }
 
-  @Delete('/:id')
+  @Delete('/api/:id')
   remove(@Param('id') id: string): string {
     const idInt = parseInt(id);
-    const isRemove = this.newsService.remove(idInt);
+    const isRemove =
+      this.newsService.remove(idInt) && this.commentsServise.removeAll(idInt);
     return isRemove ? 'Новость удалена' : 'Передан неверный идентификатор';
   }
 
-  @Patch()
-  change(@Body() news: EditNews): string {
-    const isChange = this.newsService.change(news);
+  @Patch('/api')
+  edit(@Body() news: EditNews): string {
+    const isChange = this.newsService.edit(news);
     return isChange ? 'Новость изменена' : 'Передан неверный идентификатор';
   }
 }

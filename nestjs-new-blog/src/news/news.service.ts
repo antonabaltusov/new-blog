@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Comment } from './comments/comments.service';
 
 export interface News {
   id: number;
@@ -6,6 +7,8 @@ export interface News {
   description: string;
   author: string;
   countView?: number;
+  cover?: string;
+  comments?: Comment[];
 }
 
 export interface EditNews {
@@ -16,7 +19,7 @@ export interface EditNews {
   countView?: number;
 }
 
-function getRandomInt(min: number, max: number): number {
+export function getRandomInt(min = 1, max = 99999): number {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -31,6 +34,8 @@ export class NewsService {
       description: 'evefvefv',
       author: 'erver',
       countView: 7,
+      cover:
+        'https://cdnn21.img.ria.ru/images/148839/93/1488399309_0:0:3000:2086_600x0_80_0_1_7692b9d464b76425cdcbb70c37a76884.jpg.webp',
     },
   ];
 
@@ -42,27 +47,22 @@ export class NewsService {
     };
 
     this.news.push(finalNews);
-    console.log(this.news);
     return finalNews;
   }
 
-  change(newNews: EditNews): boolean {
-    const currentNews = this.news.find((news) => news.id === newNews.id);
-    if (currentNews) {
-      const finalNews = {
-        ...currentNews,
+  edit(newNews: EditNews): boolean {
+    const indexEdit = this.news.findIndex((news) => news.id === newNews.id);
+    if (indexEdit !== -1) {
+      this.news[indexEdit] = {
+        ...this.news[indexEdit],
         ...newNews,
       };
-      this.remove(newNews.id);
-      this.news.push(finalNews);
-      console.log(this.news);
       return true;
     }
     return false;
   }
 
   find(id: number): News | undefined {
-    console.log(this.news);
     return this.news.find((news) => news.id === id);
   }
 

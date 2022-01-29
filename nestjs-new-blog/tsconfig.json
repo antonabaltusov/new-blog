@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "module": "commonjs",
@@ -12,14 +13,14 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "alwaysStrict": true,
-    "strictPropertyInitialization": true,
-    "strictFunctionTypes": true,
-    "noImplicitThis": true
+    "alwaysStrict": false,
+    "strictPropertyInitialization": false,
+    "strictFunctionTypes": false,
+    "noImplicitThis": false
   }
 }

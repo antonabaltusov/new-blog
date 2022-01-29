@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "module": "commonjs",
@@ -16,6 +17,10 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "alwaysStrict": false,
+    "strictPropertyInitialization": false,
+    "strictFunctionTypes": false,
+    "noImplicitThis": false
   }
 }

@@ -1,0 +1,49 @@
+<h1>Редактирование профиля</h1>
+{{#if _user}}
+  <form>
+    <div class="mb-3">
+      <label for="firstNameInput" class="form-label">firstName</label>
+      <input class="form-control" name="firstName" id="firstNameInput" value="{{_user.firstName}}">
+    </div>
+    <div class="mb-3">
+      <label for="emailInput" class="form-label">email</label>
+      <input class="form-control" name="email" id="emailInput" value="{{_user.email}}">
+    </div>
+    {{#if _user.roles}}
+    <div class="mb-3">
+      <label for="rolesInput" class="form-label">roles</label>
+      <input class="form-control" name="roles" id="rolesInput" value="{{_user.roles}}">
+    </div>
+    {{/if}}
+    <div class="mb-3">
+      <label for="passwordInput" class="form-label">password</label>
+      <input class="form-control" name="password" id="passwordInput">
+    </div>
+    <div class="mb-3">
+    <label for="cover">Обложка новости</label>
+    <input type="file" class="form-control-file" id="avatar" name="avatar">
+  </div>
+    <button type="button" class="btn btn-primary" onclick='sendForm()'>отправить</button>
+  </form>
+{{else}}
+  <h1>пользователь отсутствует!</h1>
+{{/if}}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  function sendForm(id) {
+    var data = new FormData($('form')[0]);
+    $.ajax({
+      url: `/users/api/`,
+      data: data,
+      cache: false,
+      contentType: false,
+      processData: false,
+      method: 'PATCH',
+      success: function() {
+        alert('успешно')
+        window.location.reload();
+      }
+    });
+  }
+</script>

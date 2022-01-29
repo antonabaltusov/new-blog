@@ -1,0 +1,20 @@
+<a href="http://localhost:3000/news/create/news" class="btn btn-primary m-1" role="button" data-bs-toggle="button">создать новость</a>
+{{#if news}}
+  <div class="row">
+    {{#each news}}
+    <div class="col-lg-6">
+      <div class="card" onclick="window.location.href= '/news/detail/{{this.id}}'" style="cursor: pointer;">
+        <img src='http://localhost:3000{{this.cover}}' class="card-img-top" style="height: 200px; object-fit: cover;" alt=''>
+        <div class="card-body">
+          <h5 class="card-title">{{this.title}}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">Автор: {{this.user.firstName}}</h6>
+          <h6 class="card-subtitle mb-2 text-muted">Дата создания: {{this.createdAt}}</h6>
+          <p class="card-text">{{this.description}}</p>
+        </div>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+{{else}}
+  <h1>Список новостей пуст!</h1>
+{{/if}}

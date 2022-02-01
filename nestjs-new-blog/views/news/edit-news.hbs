@@ -1,20 +1,20 @@
 <h1>Редактирование новости</h1>
-{{#if news}}
+{{#if _news}}
   <form method="patch" action="/news/api" enctype="multipart/form-data">
     <div class="mb-3">
-      <label for="titleInput" class="form-label">Заголовок{{news.title}}</label>
-      <input class="form-control" name="title" id="titleInput" value="{{news.title}}">
+      <label for="titleInput" class="form-label">Заголовок{{_news.title}}</label>
+      <input class="form-control" name="title" id="titleInput" value="{{_news.title}}">
     </div>
     <div class="mb-3">
       <label for="descriptionInput" class="form-label">Описание</label>
-      <textarea class="form-control" name="description" id="descriptionInput" rows="3">{{news.description}}</textarea>
+      <textarea class="form-control" name="description" id="descriptionInput" rows="3">{{_news.description}}</textarea>
     </div>
     <div class="form-group mb-3">
     <label for="cover">Обложка новости</label>
     <input type="file" class="form-control-file" id="cover" name="cover">
   </div>
-    <button type="button" class="btn btn-primary" onclick='sendForm({{news.id}})'>Сохранить</button>
-    <button type="button" class="btn btn-primary" onclick='removeNews({{news.id}})'>Удалить новость</button>
+    <button type="button" class="btn btn-primary" onclick='sendForm({{_news.id}})'>Сохранить</button>
+    <button type="button" class="btn btn-primary" onclick='removeNews({{_news.id}})'>Удалить новость</button>
   </form>
 {{else}}
   <h1>Новость отсутствует!</h1>

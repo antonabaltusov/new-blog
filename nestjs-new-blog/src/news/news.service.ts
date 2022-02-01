@@ -100,8 +100,8 @@ export class NewsService {
     return filtredNewNews;
   }
 
-  getAll(): Promise<NewsEntity[]> {
-    return this.newsRepository.find({ relations: ['user'] });
+  async getAll(): Promise<NewsEntity[]> {
+    return await this.newsRepository.find({ relations: ['user'] });
   }
 
   findByUserId(idUser: number): Promise<NewsEntity[]> {

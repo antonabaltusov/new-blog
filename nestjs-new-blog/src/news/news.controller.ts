@@ -91,8 +91,8 @@ export class NewsController {
       }
       return { _news, title: `Список новостей автора ${_user.firstName}` };
     }
-    const _news = await this.newsService.getAll();
-    return { _news, title: 'Список новостей' };
+    const news = await this.newsService.getAll();
+    return { news, title: 'Список новостей' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -244,10 +244,11 @@ export class NewsController {
     }
 
     const createdNews = await this.newsService.create(news, req.user.id);
-    await this.mailService.sendNewNewsForAdmins(
-      ['sims0204@yandex.ru', 'sims0204@gmail.com'],
-      createdNews,
-    );
+    // await this.mailService.sendNewNewsForAdmins(
+    //   ['sims0204@yandex.ru', 'sims0204@gmail.com'],
+    //   createdNews,
+    // );
+    console.log(createdNews);
     return createdNews;
   }
 

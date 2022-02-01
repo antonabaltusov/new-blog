@@ -17,7 +17,7 @@ class Comments extends React.Component {
       message: '',
     };
     this.idNews = parseInt(window.location.href.split('/').reverse()[0]);
-    this.socket = io('http://localhost:3000', {
+    this.socket = io('/', {
       query: {
         newsId: this.idNews,
       },
@@ -66,7 +66,7 @@ class Comments extends React.Component {
 
   getAllComments = async () => {
     const response = await fetch(
-      `http://localhost:3000/comments/api/${this.idNews}`,
+      `/comments/api/${this.idNews}`,
       {
         method: 'GET',
       },
@@ -80,7 +80,7 @@ class Comments extends React.Component {
 
   getNews = async () => {
     const response = await fetch(
-      `http://localhost:3000/news/api/${this.idNews}`,
+      `/news/api/${this.idNews}`,
       {
         method: 'GET',
       },
@@ -116,14 +116,14 @@ class Comments extends React.Component {
   };
 
   removeComment = (idComment) => {
-    fetch(`http://localhost:3000/comments/api/${idComment}`, {
+    fetch(`/comments/api/${idComment}`, {
       method: 'DELETE',
     });
   };
 
   removeNews = async () => {
     const response = await fetch(
-      `http://localhost:3000/news/api/${this.idNews}`,
+      `/news/api/${this.idNews}`,
       {
         method: 'DELETE',
       },
@@ -147,7 +147,7 @@ class Comments extends React.Component {
 
   saveEdit = (id) => {
     const comment = this.state.comments.find((c) => c.id === id);
-    fetch(`http://localhost:3000/comments/api/${comment.id}`, {
+    fetch(`/comments/api/${comment.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ class Comments extends React.Component {
     return (
       <div>
         <a
-          href="http://localhost:3000/news/all"
+          href="/news/all"
           className="btn btn-primary m-1"
           role="button"
           data-bs-toggle="button"
@@ -171,7 +171,7 @@ class Comments extends React.Component {
         </a>
         {userId ? (
           <a
-            href="http://localhost:3000/user/edit"
+            href="/user/edit"
             className="btn btn-primary m-1"
             role="button"
             data-bs-toggle="button"
@@ -180,7 +180,7 @@ class Comments extends React.Component {
           </a>
         ) : (
           <a
-            href="http://localhost:3000/users/create"
+            href="/users/create"
             className="btn btn-primary m-1"
             role="button"
             data-bs-toggle="button"
@@ -208,7 +208,7 @@ class Comments extends React.Component {
             <div className="d-flex flex-row-reverse">
               {userId === this.state.news.user.id && (
                 <a
-                  href={`http://localhost:3000/news/edit/news/${this.state.news.id}`}
+                  href={`/news/edit/news/${this.state.news.id}`}
                   className="btn btn-primary m-1"
                   role="button"
                   data-bs-toggle="button"
